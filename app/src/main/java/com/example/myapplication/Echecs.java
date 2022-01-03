@@ -8,6 +8,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
@@ -48,6 +49,70 @@ public class Echecs extends AppCompatActivity {
     private boolean movedBlackKing = false;
     private boolean movedWhiteKing = false;
     private ArrayList<int[][]> gameMoves;
+
+
+    /*
+    class MCTS_Echecs extends MCTS{
+
+        MCTS_Echecs(int color, int move, MCTS parent){
+            super(color, move, parent);
+        }
+
+        @Override
+        boolean isGameOver(int[][] tab) {
+            return isCheckMate(0, tab) || isCheckMate(1, tab);
+        }
+
+        @Override
+        int getWinner(int[][] tab) {
+            int value = tab_value(tab);
+            if (value > 0){
+                return 0;
+            }
+            else if (value < 0){
+                return 1;
+            }
+            return -1;
+        }
+
+        @Override
+        ArrayList<Integer> getLegalMoves(int[][] tab, int color) {
+            ArrayList<Pair<Integer, Integer>> legalMoves = Echecs.this.getLegalMoves(color, tab);
+            ArrayList<Integer> intLegalMoves = new ArrayList<>();
+            for (Pair<Integer, Integer> legalMove : legalMoves){
+                intLegalMoves.add(legalMove.first * taille * taille + legalMove.second);
+            }
+            return intLegalMoves;
+        }
+
+        @Override
+        void doMove(int[][] tab, int color, int move) {
+            Pair<Integer,Integer> pairMove = new Pair<>(move / (taille * taille), move % (taille * taille));
+            Echecs.this.doMove(pairMove, tab);
+        }
+
+        @Override
+        void undoMove(int[][] tab, int color, int move) {
+
+        }
+
+        @Override
+        MCTS newMCTS(int color, int move, MCTS parent) {
+            return new MCTS_Echecs(color, move, parent);
+        }
+
+        @Override
+        int chooseRandomMove(int[][] tab, int color) {
+            ArrayList<Integer> legalMoves = getLegalMoves(tab, color);
+            return legalMoves.get((int) (Math.random() * legalMoves.size()));
+        }
+
+        @Override
+        Context getContext() {
+            return getApplicationContext();
+        }
+    }
+     */
 
 
     ArrayList<Integer> accessible(int p, int tab_piece[][]){
@@ -589,11 +654,13 @@ public class Echecs extends AppCompatActivity {
             @Override
             public void onAnimationEnd(Animator animation) {
                 int m = 0;
+                //int m = MCTS_move();
                 try {
                     m = computer_move();
                 } catch (TimeoutException e) {
                     e.printStackTrace();
                 }
+                //Toast.makeText(getApplicationContext(), "test", Toast.LENGTH_SHORT).show();
                 int x = m / (taille * taille);
                 int y = m % (taille * taille);
                 int Castling = doMove(new Pair<Integer, Integer>(x,y), piece);
@@ -1115,6 +1182,14 @@ public class Echecs extends AppCompatActivity {
         //Toast.makeText(this, key, Toast.LENGTH_SHORT).show();
         return key;
     }
+
+/*
+    int MCTS_move(){
+        //.makeText(this, "test", Toast.LENGTH_SHORT).show();
+        MCTS_Echecs root = new MCTS_Echecs(this.color, -1, null);
+        return root.getBestMove(piece, taille, color, 10000);
+    }
+ */
 
     int computer_move() throws TimeoutException{
         maxDepthAlphaBeta = 2;

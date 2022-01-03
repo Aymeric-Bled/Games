@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -16,16 +17,18 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 
 public class Demineur extends AppCompatActivity {
     private Button main;
     private Button new_;
     private Button déminer;
     private Button flag;
-    private int taille = 10;
-    private int mines = 15;
+    private int taille = 20;
+    private int mines = 60;
     private Table tab;
     private boolean tab_flag[][] = new boolean[taille][taille];
     private boolean tab_mines[][]=new boolean[taille][taille];
@@ -75,12 +78,17 @@ public class Demineur extends AppCompatActivity {
     void create_demineur(){
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        x=(metrics.widthPixels + 1)/taille;
+        x=(int) ((metrics.widthPixels + 1)/(9.5));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(x-1, x-1);
         params.setMargins(1,1,1,1);
+        ScrollView scrollView = (ScrollView) findViewById(R.id.scroll);
+        ConstraintLayout.LayoutParams p1 = (ConstraintLayout.LayoutParams) scrollView.getLayoutParams();
+        ConstraintLayout.LayoutParams p = new ConstraintLayout.LayoutParams(metrics.widthPixels, metrics.widthPixels);
+        p.topToBottom = p1.topToBottom;
+        p.bottomToTop = p1.bottomToTop;
+        scrollView.setLayoutParams(p);
         tab = new Table((GridLayout) findViewById(R.id.grille), taille, taille, this, params, x-1);
         Button b;
-        int id;
         for (int i=0; i<taille;i++) {
             for (int j = 0; j < taille; j++) {
                 b = tab.getButton(i,j);

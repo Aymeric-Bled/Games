@@ -519,8 +519,6 @@ public class Labyrinthe extends AppCompatActivity {
     }
 
     void addTodo(ArrayList<Pair<Integer, Pair<Integer,ArrayList<Pair<Integer,Integer>>>>> todo, Pair<Integer,ArrayList<Pair<Integer,Integer>>> newPath, Pair<Integer,Integer> end){
-        value[newPath.second.get(newPath.first - 1).first][newPath.second.get(newPath.first - 1).second] = 2;
-
         int h = heuristic(newPath, end);
         if (todo.isEmpty() || h >= todo.get(todo.size() - 1).first) {
             todo.add(new Pair(h,newPath));
@@ -549,7 +547,7 @@ public class Labyrinthe extends AppCompatActivity {
         }
         del_trace();
         ArrayList<Pair<Integer,Integer>> empty = new ArrayList();
-        int ind = 0;
+        boolean already_seen[][] = new boolean[taille][taille];
         for (int i = 1; i < taille - 1; i++) {
             if (value[i][0] == 0)
                 empty.add(new Pair(i, 0));
@@ -569,12 +567,16 @@ public class Labyrinthe extends AppCompatActivity {
         ArrayList<Pair<Integer, Pair<Integer,ArrayList<Pair<Integer,Integer>>>>> todo = new ArrayList<>();
         ArrayList<Pair<Integer,Integer>> list = new ArrayList();
         list.add(start);
-        addTodo(todo, new Pair(1, list), end);
+        addTodo(todo, new Pair(1, list.clone()), end);
         while (!todo.isEmpty()){
             Pair<Integer, Pair<Integer,ArrayList<Pair<Integer,Integer>>>> element = todo.remove(0);
-            ArrayList<Pair<Integer,Integer>> path = (ArrayList<Pair<Integer,Integer>>) element.second.second;
-            paths.add((ArrayList<Pair<Integer,Integer>>) path.clone());
+            ArrayList<Pair<Integer,Integer>> path = element.second.second;
             Pair<Integer, Integer> last = path.get(path.size() - 1);
+            if (already_seen[last.first][last.second]){
+                continue;
+            }
+            already_seen[last.first][last.second] = true;
+            paths.add((ArrayList<Pair<Integer,Integer>>) path.clone());
             if (last.first == end.first && last.second == end.second){
                 animation(paths, new ArrayList<Pair<Integer, Integer>>());
                 return;
@@ -584,7 +586,7 @@ public class Labyrinthe extends AppCompatActivity {
                 for (int y = -1; y < 2; y++){
                     if (Math.abs(x) + Math.abs(y) == 1){
                         Pair<Integer, Integer> coordinate = new Pair(path.get(size - 1).first + x, path.get(size - 1).second + y);
-                        if (coordinate.first >= 0 && coordinate.first < taille && coordinate.second >= 0 && coordinate.second < taille && value[coordinate.first][coordinate.second] == 0) {
+                        if (coordinate.first >= 0 && coordinate.first < taille && coordinate.second >= 0 && coordinate.second < taille && value[coordinate.first][coordinate.second] != 1 && !already_seen[coordinate.first][coordinate.second]) {
                             ArrayList<Pair<Integer,Integer>> clone = (ArrayList<Pair<Integer,Integer>>) path.clone();
                             clone.add(coordinate);
                             addTodo(todo, new Pair(size + 1, clone), end);
@@ -633,7 +635,7 @@ public class Labyrinthe extends AppCompatActivity {
         for (int i = 1; i < anim.size(); i++) {
             s.play(anim.get(i)).with(anim.get(0));
         }
-        anim.get(0).addListener(new AnimatorListenerAdapter() {
+        anim.get(anim.size() - 1).addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 animation(paths, path);

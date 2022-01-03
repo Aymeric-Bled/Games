@@ -8,9 +8,11 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.ArraySet;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +26,10 @@ import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Set;
+
 public class Hex extends AppCompatActivity {
     private Button main;
     private Button new_;
@@ -31,7 +37,7 @@ public class Hex extends AppCompatActivity {
     private Spinner player;
     private String players[] = {"1 joueur","2 joueurs","0 joueur"};
     private int nb_players = 1;
-    private int m=13;
+    private int m=11;
     private int n;
     private double w;
     private double h;
@@ -39,46 +45,228 @@ public class Hex extends AppCompatActivity {
     private int dy;
     private int tab_button[][]= new int [m][m];
     private boolean tab_color[][][] = new boolean[2][m][m];
+    private ArraySet<Integer> empties = new ArraySet<>();
     private int color = 0;
-    private int queue[][]=new int [m*m][m*m + 1];
-    private int begin[] = new int [m*m];
-    private int end[] = new int [m*m];
-    private boolean free[] = new boolean[m*m];
     private boolean fin = false;
-    private boolean play = true;
+    private boolean play = false;
     private AnimatorSet s;
+    private MCTS root;
 
-    int new_queue(){
-        int i=0;
-        while (!free[i]){
-            i++;
+
+
+    class MCTS_Hex extends MCTS{
+
+        boolean[][][] t;
+        int[] up;
+        ArrayList<Integer> empties;
+        Hex h;
+        ArrayList<int[]> hist;
+
+        MCTS_Hex(int color, int mov, MCTS parent, boolean[][][] t, int[] up, ArrayList empties, Hex h){
+            super(color, mov, parent);
+            this.t = t;
+            this.up = up.clone();
+            this.empties = empties;
+            this.hist = new ArrayList<>();
+            this.h = h;
         }
-        begin[i] = 0;
-        end [i] = 0;
-        free[i] = false;
-        return i;
-    }
 
-    boolean is_empty(int q) {
-        return end[q] == begin[q];
-    }
 
-    void enqueue (int q, int n){
-        queue[q][end[q]] = n;
-        end[q] = (end[q] + 1) % (m * m + 1);
-    }
+        @Override
+        boolean isGameOver(int[][] tab) {
+            return h.getRoot(up,0, 1) == h.getRoot(up,m - 1, 1) || h.getRoot(up,1, 0) == h.getRoot(up,1, m - 1);
+        }
 
-    int dequeue (int q){
-        if (is_empty(q)){
+        @Override
+        int getWinner(int[][] tab) {
+            if (h.getRoot(up,0, 1) == h.getRoot(up,m - 1, 1))
+                return 0;
+            if (getRoot(up,1, 0) == getRoot(up,1, m - 1))
+                return 1;
+            assert false;
             return -1;
         }
-        n = queue[q][begin[q]];
-        begin[q] = (begin[q] + 1) % (m * m + 1);
-        return n;
+
+        @Override
+        ArrayList<Integer> getLegalMoves(int[][] tab, int color) {
+            return (ArrayList<Integer>) empties.clone();
+        }
+
+        @Override
+        void doMove(int[][] tab, int color, int move) {
+            hist.add(up.clone());
+            assert !t[1 - color][move / m][move % m];
+            tab[move / m][move % m] = color + 1;
+            t[color][move / m][move % m] = true;
+            int i = empties.indexOf(move);
+            empties.remove(i);
+            //empties.remove((Object) move);
+            for (int x = -1; x < 2; x++){
+                for (int y = -1; y < 2; y++){
+                    if (move / m + x >= 0 && move / m + x < m && move % m + y >= 0 && move % m + y < m && is_neighbor(move, move + m * x + y) && t[color][move / m + x][move % m + y]){
+                        int root = h.getRoot(up, move / m + x, move % m + y);
+                        int root2 = h.getRoot(up, move / m, move % m);
+                        if (root != root2)
+                            up[root] = root2;
+                    }
+                }
+            }
+        }
+
+        @Override
+        void undoMove(int[][] tab, int color, int move) {
+            tab[move / m][move % m] = 0;
+            t[color][move / m][move % m] = false;
+            t[1 - color][move / m][move % m] = false;
+            empties.add(move);
+            up = hist.remove(hist.size() - 1);
+        }
+
+        @Override
+        MCTS newMCTS(int color, int move, MCTS parent) {
+            return new MCTS_Hex(color, move, parent , this.t, this.up, ((MCTS_Hex) parent).empties, this.h);
+        }
+
+        @Override
+        int chooseRandomMove(int[][] tab, int color) {
+            //ArrayList legalMoves = this.getLegalMoves(tab, color);
+            return (int) empties.get((int) (Math.random() * empties.size()));
+            //return move_computer(t);
+            //return (int) (Math.random() * m*m);
+        }
+
+        @Override
+        Context getContext() {
+            return getApplicationContext();
+        }
+
+        int rollout(int[][] tab, int mycolor, int taille){
+            int[] copy = up.clone();
+            int c = super.rollout(tab, mycolor, taille);
+            up = copy;
+            return c;
+        }
+
+
+
+        int[] weight(int color){
+            int[] weight = new int[m * m];
+/*
+            boolean[] path_intersection = path_intersection(t,false);
+            for (int i = 0; i < m * m; i++){
+                if (path_intersection[i]){
+                    weight[i] = 5;
+                }
+                else{
+                    weight[i] = 0;
+                }
+            }
+
+            for (int empty : empties){
+                int i = empty / m;
+                int j = empty % m;
+                ArrayList<Integer> myComponents = new ArrayList<>();
+                ArrayList<Integer> opponentComponents = new ArrayList<>();
+                for (int di = -2; di < 3; di++){
+                    for (int dj = -2; dj < 3; dj++){
+                        if (i + di >= 1 && i + di < m - 1 && j + dj >= 1 && j + dj < m - 1){
+                            if (is_owner(t, color, (i + di) * m + (j + dj))) {
+                                if (is_neighbor(empty, (i + di) * m + (j + dj)) || is_semi_linked(t, empty, (i + di) * m + (j + dj))) {
+                                    int root = h.getRoot(up, i + di, j + dj);
+                                    if (!myComponents.contains(root)) {
+                                        myComponents.add(root);
+                                    }
+                                }
+                            }
+                            if (is_owner(t, 1 - color, (i + di) * m + (j + dj))) {
+                                if (is_neighbor(empty, (i + di) * m + (j + dj)) || is_semi_linked(t, empty, (i + di) * m + (j + dj))) {
+                                    int root = h.getRoot(up, i + di, j + dj);
+                                    if (!opponentComponents.contains(root)) {
+                                        opponentComponents.add(root);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                weight[empty] += ((myComponents.size() > 1) ? myComponents.size() - 1 : 0) + 2 * ((opponentComponents.size() > 1) ? opponentComponents.size() - 1 : 0);
+            }
+
+
+ */
+            return weight;
+        }
+
+
     }
 
-    void free(int q){
-        free[q] = true;
+    MCTS newMCTS(){
+        int up[] = new int[m*m];
+        for (int i = 0; i < m; i++){
+            for (int j = 0; j < m; j++){
+                up[i * m + j] = i * m + j;
+            }
+        }
+        for (int i = 0; i < m; i++){
+            for (int j = 0; j < m; j++) {
+                int mov = i * m + j;
+                for (int x = -1; x < 2; x++){
+                    for (int y = -1; y < 2; y++){
+                        if (mov / m + x >= 0 && mov / m + x < m && mov % m + y >= 0 && mov % m + y < m && is_neighbor(mov, mov + m * x + y) && ((tab_color[0][mov / m + x][mov % m + y] && tab_color[0][mov / m][mov % m]) || (tab_color[1][mov / m + x][mov % m + y] && tab_color[1][mov / m][mov % m]))){
+                            int root = getRoot(up, mov / m + x, mov % m + y);
+                            int root2 = getRoot(up, mov / m, mov % m);
+                            if (root != root2)
+                                up[root] = root2;
+                        }
+                    }
+                }
+            }
+        }
+        ArrayList empties = new ArrayList();
+        for (int i = 1; i < m - 1; i ++){
+            for (int j = 1; j < m - 1; j++){
+                if (is_free(tab_color, i * m + j)){
+                    empties.add(i * m + j);
+                }
+            }
+        }
+        return new MCTS_Hex(this.color, -1, null, tab_color, up, (ArrayList) empties, this);
+    }
+
+    void updateTree(int move){
+
+        int[][] tab = new int[m][m];
+        for (int i = 0; i < m; i++){
+            for (int j = 0; j < m; j++){
+                if (tab_color[0][i][j]){
+                    tab[i][j] = 1;
+                }
+                else if (tab_color[1][i][j]){
+                    tab[i][j] = 2;
+                }
+                else {
+                    tab[i][j] = 0;
+                }
+            }
+        }
+        for (MCTS child : this.root.children){
+            if (child.move == move){
+                this.root = child;
+                this.root.parent = null;
+                this.root.doMove(tab,color,move);
+                return;
+            }
+        }
+        //this.root.doMove(tab, color, move);
+        this.root = newMCTS();
+    }
+
+    int getRoot(int[] up, int i, int j){
+        int n = i * m + j;
+        while (up[n] != n){
+            n = up[n];
+        }
+        return n;
     }
 
     boolean is_neighbor(int i, int j){
@@ -106,66 +294,66 @@ public class Hex extends AppCompatActivity {
         return false;
     }
 
-    boolean is_semi_linked(int i, int j){
+    boolean is_semi_linked(boolean[][][] t, int i, int j){
         if (!in(i) || !in(j)){
             return false;
         }
-        if (i/m > 1 && i% m >0 && j == n-2*m-1 && is_free(n-m-1) && is_free(n - m)){
+        if (i/m > 1 && i% m >0 && j == n-2*m-1 && is_free(t, n-m-1) && is_free(t, n - m)){
             return true;
         }
-        if (i/m > 0 && i% m < m - 1 && j == n-m+1 && is_free(n-m) && is_free(n +1)){
+        if (i/m > 0 && i% m < m - 1 && j == n-m+1 && is_free(t, n-m) && is_free(t, n +1)){
             return true;
         }
-        if (i/m < m - 1 && i% m < m - 2 && j == n+m+2 && is_free(n+1) && is_free(n+m+1)){
+        if (i/m < m - 1 && i% m < m - 2 && j == n+m+2 && is_free(t, n+1) && is_free(t, n+m+1)){
             return true;
         }
-        if (i/m < m - 2 && i% m < m - 1 && j == n+2*m+1 && is_free(n+m+1) && is_free(n + m)){
+        if (i/m < m - 2 && i% m < m - 1 && j == n+2*m+1 && is_free(t, n+m+1) && is_free(t, n + m)){
             return true;
         }
-        if (i/m < m - 1 && i% m >0 && j == n+m-1 && is_free(n+m) && is_free(n - 1)){
+        if (i/m < m - 1 && i% m >0 && j == n+m-1 && is_free(t, n+m) && is_free(t, n - 1)){
             return true;
         }
-        if (i/m > 0 && i% m >1 && j == n-2*m-1 && is_free(n-1) && is_free(n - m - 1)){
+        if (i/m > 0 && i% m >1 && j == n-2*m-1 && is_free(t, n-1) && is_free(t, n - m - 1)){
             return true;
         }
         return false;
     }
 
-    boolean is_under_semi_linked(int i, int c){
-        if (!is_free(i))
+    boolean is_under_semi_linked(boolean t[][][], int i, int c){
+        if (!is_free(t, i))
             return false;
-        if (is_free(i-m) && is_owner(1-c, i-m-1) && is_owner(1-c, i+1))
+        if (is_free(t, i-m) && is_owner(t, 1-c, i-m-1) && is_owner(t, 1-c, i+1))
             return true;
 
-        if (is_free(i+1) && is_owner(1-c,i-m) && is_owner(1-c,i+m+1))
+        if (is_free(t, i+1) && is_owner(t, 1-c,i-m) && is_owner(t, 1-c,i+m+1))
             return true;
-        if (is_free(i+m+1) && is_owner(1-c,i+1) && is_owner(1-c,i-m))
+        if (is_free(t, i+m+1) && is_owner(t, 1-c,i+1) && is_owner(t, 1-c,i-m))
             return true;
-        if (is_free(i+m) && is_owner(1-c,i+m+1) && is_owner(1-c,i-1))
+        if (is_free(t, i+m) && is_owner(t, 1-c,i+m+1) && is_owner(t, 1-c,i-1))
             return true;
-        if (is_free(i-1) && is_owner(1-c,i+m) && is_owner(1-c,i-m-1))
+        if (is_free(t, i-1) && is_owner(t, 1-c,i+m) && is_owner(t, 1-c,i-m-1))
             return true;
-        if (is_free(i-m-1) && is_owner(1-c,i-1) && is_owner(1-c,i+m))
+        if (is_free(t, i-m-1) && is_owner(t, 1-c,i-1) && is_owner(t, 1-c,i+m))
             return true;
 
         return false;
     }
 
-    boolean is_owner(int c, int i){
+    boolean is_owner(boolean t[][][], int c, int i){
 
-        return in(i) && tab_color[c][i/m][i%m];
+        return in(i) && t[c][i/m][i%m];
 
     }
 
-    boolean is_free(int n){
-        return !is_owner(0,n) && !is_owner(1,n);
+    boolean is_free(boolean t[][][], int n){
+        return !is_owner(t,0,n) && !is_owner(t,1,n);
     }
 
 
 
-    boolean is_connected( int n, int p){
+    boolean is_connected(boolean t[][][], int n, int p){
 
-        return (in(p) && in(n) && (is_neighbor(n,p) || is_semi_linked(n,p)));
+        return (in(p) && in(n) && (is_neighbor(n,p) || is_semi_linked(t, n,p)));
 
     }
 
@@ -173,33 +361,33 @@ public class Hex extends AppCompatActivity {
         return !(n/m == 0 && n%m == 0 || n/m == m - 1 && n%m == 0 ||n/m == 0 && n%m == m - 1 ||n/m == m - 1 && n%m == m - 1);
     }
 
-    boolean is_winning(){
+    boolean is_winning(boolean[][][] t, int color){
         boolean already_seen[]= new boolean[m * m];
         int n;
         int k;
         for (int i = 0; i < m*m; i++)
             already_seen[i] = false;
-        int q =new_queue();
+        ArrayList q = new ArrayList();
         if (color == 0)
             for (int i = 1; i < m - 1; i++) {
-                enqueue(q, i);
+                q.add(i);
                 already_seen[i] = true;
             }
         else{
             for (int i = 1; i < m - 1; i++){
-                enqueue(q, m * i);
+                q.add(m * i);
                 already_seen[m * i] = true;
             }
         }
-        while (!is_empty(q)){
-            n = dequeue(q);
+        while (!q.isEmpty()){
+            n = (int) q.remove(0);
             for (int i = 1; i< m - 1; i++){
                 for (int j = 1; j < m - 1; j++){
                     k = m * i + j;
-                    if (!already_seen[k] && is_owner(color, k) && is_neighbor(n,k)) {
+                    if (!already_seen[k] && is_owner(t, color, k) && is_neighbor(n,k)) {
                         if (i == m - 2 && color == 0 || j == m - 2 && color == 1)
                             return true;
-                        enqueue(q, k);
+                        q.add(k);
                         already_seen[k] = true;
                     }
 
@@ -207,13 +395,12 @@ public class Hex extends AppCompatActivity {
             }
 
         }
-        free(q);
         return false;
     }
 
     void end(){
 
-        if (is_winning()) {
+        if (is_winning(tab_color, color)) {
             fin = true;
             AlertDialog.Builder fin = new AlertDialog.Builder(this);
             fin.setTitle("Fin !!!");
@@ -252,10 +439,13 @@ public class Hex extends AppCompatActivity {
     void create_hex(){
         Button b;
         int id;
+        empties = new ArraySet<>();
         for (int i=0; i < m; i++)
             for (int j=0; j<m; j++){
                 tab_color[0][i][j] = false;
                 tab_color[1][i][j] = false;
+                if (i > 0 && j > 0 && i < m - 1 && j < m - 1)
+                    empties.add(i * m + j);
                 if ((i!=0 || j!=0) && (i!=0 || j!=m-1) && (i!=m-1 || j!=0) && (i!=m-1 || j!=m-1)) {
                     if(i==0 || i==m-1) {
                         b = new Button(this);
@@ -312,14 +502,17 @@ public class Hex extends AppCompatActivity {
     void new_(){
         fin = false;
         Button b;
+        empties = new ArraySet<>();
         for (int i = 1; i< m-1; i++)
             for (int j= 1; j < m-1; j++){
                 b=findViewById(tab_button[i][j]);
                 b.setBackgroundResource(R.drawable.white_hexagon);
                 tab_color[0][i][j] = false;
                 tab_color[1][i][j] = false;
+                empties.add(i * m + j);
             }
-        if (nb_players == 0)
+        this.root = newMCTS();
+        if (nb_players != 2)
             play_computer();
     }
 
@@ -334,13 +527,13 @@ public class Hex extends AppCompatActivity {
 
         for (int i = 0; i < m*m; i++) {
             if (in(i)) {
-                connected[i] = ((semi_linked && is_semi_linked(n, i) || !semi_linked && is_connected(n, i)) && is_owner(c, i));
+                connected[i] = ((semi_linked && is_semi_linked(tab_color,n, i) || !semi_linked && is_connected(tab_color,n, i)) && is_owner(tab_color,c, i));
                 already_seen[i] = false;
             }
 
         }
-        int q1;
-        int q2;
+        ArrayList q1;
+        ArrayList q2;
 
         for (int p = 0; p < m*m; p++) {
 
@@ -348,33 +541,30 @@ public class Hex extends AppCompatActivity {
 
                 w++;
 
-                q1 = new_queue();
-                enqueue(q1, p);
+                q1 = new ArrayList<>();
+                q1.add(p);
 
-                while (!is_empty(q1)) {
+                while (!q1.isEmpty()) {
 
-                    q2 = new_queue();
+                    q2 = new ArrayList();
 
-                    while (!is_empty(q1)) {
+                    while (!q1.isEmpty()) {
 
-                        k = dequeue(q1);
+                        k = (int) q1.remove(0);
 
                         for (int i = 0; i < m*m ; i++) {
 
-                            if (in(i) && is_connected(k, i) && is_owner(c, i) && !already_seen[i]) {
+                            if (in(i) && is_connected(tab_color,k, i) && is_owner(tab_color,c, i) && !already_seen[i]) {
 
                                 already_seen[i] = true;
-                                enqueue(q2, i);
+                                q2.add(i);
 
                             }
                         }
                     }
-                    free (q1);
                     q1 = q2;
 
                 }
-
-                free (q1);
 
                 for (k = 0; k < m*m; k++) {
                     if (in(k) && already_seen[k] && connected[k]) {
@@ -390,56 +580,54 @@ public class Hex extends AppCompatActivity {
     }
 
 
-    boolean []component(int n, int c){
+    boolean []component(boolean[][][] t, int n, int c){
         boolean connected[]= new boolean[m*m];
         for (int i=0; i<m*m; i++) {
             connected[i] = false;
         }
-        int q =new_queue();
-        enqueue(q, n);
+        ArrayList q =new ArrayList<>();
+        q.add(n);
         connected[n] = true;
         int k;
-        while (!is_empty(q)) {
-            k = dequeue(q);
+        while (!q.isEmpty()) {
+            k = (int) q.remove(0);
             for (int i = 0; i < m * m; i++) {
-                if (is_connected(i, k) && is_owner(c, i) && !connected[i]) {
-                    enqueue(q, i);
+                if (is_connected(t,i, k) && is_owner(t,c, i) && !connected[i]) {
+                    q.add(i);
                     connected[i] = true;
                 }
             }
         }
-        free(q);
         return connected;
     }
 
-    boolean []next(int n, int c, boolean already_seen[], boolean end_component[], boolean semi_linked, boolean under_semi_linked){
+    boolean []next(boolean[][][] t, int n, int c, boolean already_seen[], boolean end_component[], boolean semi_linked, boolean under_semi_linked){
         boolean connected[]= new boolean[m*m];
         boolean next[]= new boolean[m*m];
         for (int i=0; i<m*m; i++) {
             next[i] = false;
             connected[i] = false;
         }
-        int q =new_queue();
-        enqueue(q, n);
+        ArrayList q = new ArrayList<>();
+        q.add(n);
         connected[n] = true;
         int k;
-        while (!is_empty(q)){
-            k = dequeue(q);
+        while (!q.isEmpty()){
+            k = (int) q.remove(0);
             for (int i = 0; i < m*m; i++){
-                if (is_owner(c,i) && ((!semi_linked && is_neighbor(i,k)) || (semi_linked && is_connected(i,k)))  && !connected[i]){
-                    enqueue(q,i);
+                if (is_owner(t,c,i) && ((!semi_linked && is_neighbor(i,k)) || (semi_linked && is_connected(t,i,k)))  && !connected[i]){
+                    q.add(i);
                     connected[i] = true;
                 }
-                if (((!semi_linked && is_neighbor(i,k)) || (semi_linked && is_connected(i,k))) && (is_free(i) && (!under_semi_linked || !is_under_semi_linked(i,c)) && !already_seen[i] && !connected[i] || end_component[i])){
+                if (((!semi_linked && is_neighbor(i,k)) || (semi_linked && is_connected(t,i,k))) && (is_free(t,i) && (!under_semi_linked || !is_under_semi_linked(t,i,c)) && !already_seen[i] && !connected[i] || end_component[i])){
                     next[i] = true;
                 }
             }
         }
-        free(q);
         return next;
     }
 
-    boolean [] path_intersection(boolean under_semi_linked){
+    boolean [] path_intersection(boolean[][][] t, boolean under_semi_linked){
         boolean previous[][][]= new boolean[2][m*m][m*m];
         boolean already_seen[] = new boolean[m*m];
         boolean already_seen2[] = new boolean[m*m];
@@ -461,9 +649,9 @@ public class Hex extends AppCompatActivity {
         }
         boolean fin;
         int k;
-        int q1;
-        int q2;
-        int q3;
+        ArrayList q1;
+        ArrayList q2;
+        ArrayList q3;
         for (int c = 0; c<2; c++){
             for (int i = 0; i< m*m; i++) {
                 already_seen[i] = false;
@@ -471,41 +659,41 @@ public class Hex extends AppCompatActivity {
                 already_seen3[i] = false;
             }
             if (c == 0){
-                begin_component = component(1,c);
-                end_component = component(m*m - 2, c);
+                begin_component = component(t, 1,c);
+                end_component = component(t, m*m - 2, c);
             }
             else{
-                begin_component = component(m,c);
-                end_component = component(m*m - m - 1, c);
+                begin_component = component(t, m,c);
+                end_component = component(t, m*m - m - 1, c);
             }
-            q1 = new_queue();
-            q3 = new_queue();
+            q1 = new ArrayList<>();
+            q3 = new ArrayList<>();
             fin = false;
             for (int i= 0; i< m*m; i++) {
                 if (begin_component[i]) {
-                    enqueue(q1, i);
+                    q1.add(i);
                     already_seen[i] = true;
                     if (end_component[i]) {
                         fin = true;
-                        enqueue(q3,i);
+                        q3.add(i);
                         already_seen3[i] = true;
                     }
                 }
             }
             while (!fin){
-                q2 =new_queue();
-                while (!is_empty(q1)){
-                    k=dequeue(q1);
-                    next= next(k,c, already_seen,end_component,false, under_semi_linked && c == 1 - color);
+                q2 =new ArrayList<>();
+                while (!q1.isEmpty()){
+                    k = (int) q1.remove(0);
+                    next= next(t, k,c, already_seen,end_component,false, under_semi_linked /*&& c == 1 - color*/);
                     for (int i = 0; i<m*m; i++){
                         if (next[i]){
                             if (end_component[i]&& !already_seen3[i]){
                                 fin =true;
-                                enqueue(q3,i);
+                                q3.add(i);
                                 already_seen3[i] = true;
                             }
                             if (!already_seen2[i]){
-                                enqueue(q2, i);
+                                q2.add(i);
                                 already_seen2[i] = true;
                             }
                             previous[c][i][k] = true;
@@ -514,25 +702,21 @@ public class Hex extends AppCompatActivity {
                 }
                 for (int i = 0; i< m*m; i++)
                     already_seen[i] = already_seen2[i];
-                free(q1);
                 q1 = q2;
-                if (is_empty(q1)){
-                    free(q1);
-                    return path_intersection(false);
+                if (q1.isEmpty()){
+                    return path_intersection(t, false);
                 }
             }
-            free(q1);
-            while (!is_empty(q3)){
-                k=dequeue(q3);
+            while (!q3.isEmpty()){
+                k = (int) q3.remove(0);
                 path[c][k] = true;
                 for (int i =0; i<m*m; i++){
                     if (previous[c][k][i] && !already_seen3[i]){
-                        enqueue(q3, i);
+                        q3.add(i);
                         already_seen3[i] = true;
                     }
                 }
             }
-            free(q3);
         }
         for (int i = 0; i< m*m; i++){
             path_intersection[i] = path[0][i] && path[1][i];
@@ -551,9 +735,10 @@ public class Hex extends AppCompatActivity {
 
 
     int path_length(int color, int c, int n, boolean under_semi_linked){
-        if (!is_free(n))
+        if (!is_free(tab_color,n))
             return m*m;
         tab_color[color][n/m][n%m] = true;
+        empties.remove(n);
         boolean already_seen[] = new boolean[m*m];
         boolean next[];
         boolean begin_component[];
@@ -561,23 +746,23 @@ public class Hex extends AppCompatActivity {
         for (int i = 0; i<m*m; i++){
             already_seen[i] = false;
         }
-        int q1 = new_queue();
-        int q2;
+        ArrayList q1 = new ArrayList<>();
+        ArrayList q2;
         if (c == 0){
-            begin_component = component(1,c);
-            end_component = component(m*m - 2, c);
+            begin_component = component(tab_color, 1,c);
+            end_component = component(tab_color, m*m - 2, c);
         }
         else{
-            begin_component = component(m,c);
-            end_component = component(m*m - m - 1, c);
+            begin_component = component(tab_color, m,c);
+            end_component = component(tab_color, m*m - m - 1, c);
         }
         for (int i = 0; i < m*m; i++){
             if (begin_component[i]){
-                enqueue(q1, i);
+                q1.add(i);
                 already_seen[i] = true;
                 if (end_component[i]){
-                    free(q1);
                     tab_color[color][n/m][n%m] = false;
+                    empties.add(n);
                     return 0;
                 }
             }
@@ -585,29 +770,27 @@ public class Hex extends AppCompatActivity {
         int l;
         int k;
         for (l = 0; true ; l++) {
-            q2 = new_queue();
-            while (!is_empty(q1)) {
-                k = dequeue(q1);
-                next = next(k, c, already_seen, end_component, true, under_semi_linked);
+            q2 = new ArrayList<>();
+            while (!q1.isEmpty()) {
+                k = (int) q1.remove(0);
+                next = next(tab_color, k, c, already_seen, end_component, true, under_semi_linked);
                 for (int i = 0; i < m * m; i++) {
                     if (next[i] && !already_seen[i]) {
-                        enqueue(q2, i);
+                        q2.add(i);
                         already_seen[i] = true;
                         if (end_component[i]) {
-                            free(q1);
-                            free(q2);
                             tab_color[color][n/m][n%m] = false;
+                            empties.add(n);
                             return l;
                         }
                     }
                 }
 
             }
-            free(q1);
             q1 = q2;
-            if (is_empty(q1)){
-                free(q1);
+            if (q1.isEmpty()){
                 tab_color[color][n/m][n%m] = false;
+                empties.add(n);
                 return m*m;
             }
         }
@@ -616,14 +799,14 @@ public class Hex extends AppCompatActivity {
     int weight_path(int n){
         return  path_length(color,1-color, n, true) - path_length(1 - color,1-color, n, true) - path_length(color, color,n,true);
     }
-    int weigth_connected(int n){
+    int weight_connected(int n){
         return compute_weight(n,color, true) + compute_weight(n, 1 - color, true);
     }
 
     int [] weight_path(){
         int [] weight = new int[m * m];
         for (int i = 0; i < m * m; i++){
-            if (is_free(i))
+            if (is_free(tab_color,i))
                 weight[i] = weight_path(i);
             else
                 weight[i] = - m * m;
@@ -631,12 +814,33 @@ public class Hex extends AppCompatActivity {
         return  weight;
     }
 
-    int move_computer(){
-        boolean path_intersection[] = path_intersection(true);
+    int MCTS_move(){
+        int[][] tab = new int[m][m];
+        for (int i = 0; i < m; i++){
+            for (int j = 0; j < m; j++){
+                if (tab_color[0][i][j]){
+                    tab[i][j] = 1;
+                }
+                else if (tab_color[1][i][j]){
+                    tab[i][j] = 2;
+                }
+                else {
+                    tab[i][j] = 0;
+                }
+            }
+        }
+        //print_tab(tab, m);
+        //return 1;
+        return this.root.getBestMove(tab, m, 4000);
+    }
+
+    int move_computer(boolean[][][] t){
+        boolean path_intersection[] = path_intersection(t, true);
         int best_move[] = new int[m * m];
         int length = 0;
+        /*
         for (int i = 0; i < m * m; i++) {
-            if (is_free(i) && path_intersection[i]) {
+            if (is_free(t,i) && path_intersection[i]) {
                 if (length == 0 || weigth_connected(i) > weigth_connected(best_move[0])) {
                     best_move[0] = i;
                     length = 1;;
@@ -648,12 +852,21 @@ public class Hex extends AppCompatActivity {
 
         }
         int move = best_move[(int) (Math.random() * length)];
+
+         */
+
+        for (int i = 0; i < m * m; i++) {
+            if (is_free(t,i) && path_intersection[i]) {
+                best_move[length++] = i;
+            }
+        }
+        int move = best_move[(int) (Math.random() * length)];
         return move;
     }
 
 
     synchronized boolean can_play(int p){
-        if (play && !fin && is_free(p) ){
+        if (play && !fin && is_free(tab_color,p) ){
             play = false;
             return true;
         }
@@ -661,7 +874,10 @@ public class Hex extends AppCompatActivity {
     }
 
     void play_computer(){
-        int move= move_computer();
+        //int move= move_computer();
+        int move = MCTS_move();
+        updateTree(move);
+        //Toast.makeText(getApplicationContext(), "" + move, Toast.LENGTH_SHORT).show();
         Button b=findViewById(tab_button[move/m][move%m]);
         final ObjectAnimator objectAnimator;
         s = new AnimatorSet();
@@ -686,6 +902,7 @@ public class Hex extends AppCompatActivity {
             }
         });
         tab_color[color][move/m][move%m] = true;
+        empties.remove(move);
         s.play(objectAnimator);
         s.start();
     }
@@ -696,6 +913,7 @@ public class Hex extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (can_play(i*m+j)){
+                    updateTree(i * m + j);
                     final ObjectAnimator objectAnimator;
                     s = new AnimatorSet();
                     if (color == 0)
@@ -720,6 +938,7 @@ public class Hex extends AppCompatActivity {
                         }
                     });
                     tab_color[color][i][j] = true ;
+                    empties.remove(i * m + j);
                     s.play(objectAnimator);
                     s.start();
                 }
@@ -766,9 +985,6 @@ public class Hex extends AppCompatActivity {
         dx = (int) (4 * width - ((3 * m + 1) * w)) / 8;
         dy = (int) (2 * height - ((3 * m - 3) * h)) / 4;
         create_hex();
-        for (int i = 0; i< m*m; i++){
-            free[i] = true;
-        }
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override
