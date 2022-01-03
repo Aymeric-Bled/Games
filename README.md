@@ -17,7 +17,7 @@
 <img src="./screenshots/Echecs.png" width="300">
 
 ## FreeCell
-<img src="./screenshots/FreeCell.png" width="300">
+<img src="./screenshots/Freecell.png" width="300">
 
 ## Hex
 <img src="./screenshots/Hex.png" width="300">
