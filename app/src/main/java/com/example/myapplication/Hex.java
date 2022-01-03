@@ -257,7 +257,6 @@ public class Hex extends AppCompatActivity {
                 return;
             }
         }
-        //this.root.doMove(tab, color, move);
         this.root = newMCTS();
     }
 
