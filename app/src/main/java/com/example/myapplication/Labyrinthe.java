@@ -271,7 +271,7 @@ public class Labyrinthe extends AppCompatActivity {
         int b[];
         Button button;
         s = new AnimatorSet();
-        Animator anim[] = new Animator[4 * taille * taille];
+        ArrayList<Animator> anim = new ArrayList<>();
         int k = 0;
         while (ind != fin) {
             a = autour(ind, 0);
@@ -282,8 +282,8 @@ public class Labyrinthe extends AppCompatActivity {
                     button = tab.getButton(ind / taille, ind % taille);
                     ObjectAnimator objectAnimator = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.BLUE, Color.BLUE);
                     objectAnimator.setDuration(40);
-                    if (k != 0) {
-                        s.play(objectAnimator).after(anim[k - 1]);
+                    if (!anim.isEmpty()) {
+                        s.play(objectAnimator).after(anim.get(anim.size() -1));
                     } else {
                         s.play(objectAnimator);
                     }
@@ -296,14 +296,14 @@ public class Labyrinthe extends AppCompatActivity {
                     button = tab.getButton(ind / taille, ind % taille);
                     ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.GREEN, Color.GREEN);
                     objectAnimator2.setDuration(40);
-                    if (k != 0) {
-                        s.play(objectAnimator2).after(anim[k - 1]);
+                    if (!anim.isEmpty()) {
+                        s.play(objectAnimator2).after(anim.get(anim.size() -1));
                     } else {
                         s.play(objectAnimator2);
                     }
                     a = autour(ind, 0);
-                    anim[k++] = objectAnimator;
-                    anim[k++] = objectAnimator2;
+                    anim.add(objectAnimator);
+                    anim.add(objectAnimator2);
 
                 }
             } else {
@@ -311,8 +311,8 @@ public class Labyrinthe extends AppCompatActivity {
                 button = tab.getButton(ind / taille, ind % taille);
                 ObjectAnimator objectAnimator = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.RED, Color.RED);
                 objectAnimator.setDuration(40);
-                if (k != 0) {
-                    s.play(objectAnimator).after(anim[k - 1]);
+                if (!anim.isEmpty()) {
+                    s.play(objectAnimator).after(anim.get(anim.size() -1));
                 } else {
                     s.play(objectAnimator);
                 }
@@ -321,21 +321,21 @@ public class Labyrinthe extends AppCompatActivity {
                 button = tab.getButton(ind / taille, ind % taille);
                 ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.GREEN, Color.GREEN);
                 objectAnimator2.setDuration(40);
-                if (k != 0) {
-                    s.play(objectAnimator2).after(anim[k - 1]);
+                if (!anim.isEmpty()) {
+                    s.play(objectAnimator2).after(anim.get(anim.size() - 1));
                 } else {
                     s.play(objectAnimator2);
                 }
                 a = autour(ind, 0);
-                anim[k++] = objectAnimator;
-                anim[k++] = objectAnimator2;
+                anim.add(objectAnimator);
+                anim.add(objectAnimator2);
             }
         }
         s.start();
 
     }
 
-    int anim(Animator anim[], int k, ArrayList l, ArrayList chemin) {
+    int anim(ArrayList<Animator> anim, int k, ArrayList l, ArrayList chemin) {
         int ind = k;
         Set liste = new HashSet();
 
@@ -349,57 +349,61 @@ public class Labyrinthe extends AppCompatActivity {
             if (copy[p / taille][p % taille] == 0 && value[p / taille][p % taille] != 0) {
                 ObjectAnimator objectAnimator = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.WHITE, Color.WHITE);
                 objectAnimator.setDuration(150);
-                if (k > 0) {
-                    s.play(objectAnimator).after(anim[k - 1]);
+                if (k != 0) {
+                    s.play(objectAnimator).after(anim.get(k - 1));
                 } else {
-                    if (ind > 0)
-                        s.play(objectAnimator).with(anim[0]);
+                    if (!anim.isEmpty())
+                        s.play(objectAnimator).with(anim.get(0));
                     else
                         s.play(objectAnimator);
                 }
-                anim[ind++] = objectAnimator;
+                ind++;
+                anim.add(objectAnimator);
             }
 
             if (copy[p / taille][p % taille] == 2 && value[p / taille][p % taille] != 2) {
                 ObjectAnimator objectAnimator = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.RED, Color.RED);
                 objectAnimator.setDuration(150);
-                if (k > 0) {
-                    s.play(objectAnimator).after(anim[k - 1]);
+                if (k != 0) {
+                    s.play(objectAnimator).after(anim.get(k - 1));
                 } else {
-                    if (ind > 0)
-                        s.play(objectAnimator).with(anim[0]);
+                    if (!anim.isEmpty())
+                        s.play(objectAnimator).with(anim.get(0));
                     else
                         s.play(objectAnimator);
                 }
-                anim[ind++] = objectAnimator;
+                ind++;
+                anim.add(objectAnimator);
             }
 
             if (copy[p / taille][p % taille] == 3 && value[p / taille][p % taille] != 3) {
                 ObjectAnimator objectAnimator = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.GREEN, Color.GREEN);
                 objectAnimator.setDuration(150);
-                if (k > 0) {
-                    s.play(objectAnimator).after(anim[k - 1]);
+                if (k != 0) {
+                    s.play(objectAnimator).after(anim.get(k - 1));
                 } else {
-                    if (ind > 0)
-                        s.play(objectAnimator).with(anim[0]);
+                    if (!anim.isEmpty())
+                        s.play(objectAnimator).with(anim.get(0));
                     else
                         s.play(objectAnimator);
                 }
-                anim[ind++] = objectAnimator;
+                ind++;
+                anim.add(objectAnimator);
             }
 
             if (copy[p / taille][p % taille] == 4 && value[p / taille][p % taille] != 4) {
                 ObjectAnimator objectAnimator = ObjectAnimator.ofObject(button, "backgroundColor", new ArgbEvaluator(), Color.BLUE, Color.BLUE);
                 objectAnimator.setDuration(150);
-                if (k > 0) {
-                    s.play(objectAnimator).after(anim[k - 1]);
+                if (k != 0) {
+                    s.play(objectAnimator).after(anim.get(k - 1));
                 } else {
-                    if (ind > 0)
-                        s.play(objectAnimator).with(anim[0]);
+                    if (!anim.isEmpty())
+                        s.play(objectAnimator).with(anim.get(0));
                     else
                         s.play(objectAnimator);
                 }
-                anim[ind++] = objectAnimator;
+                ind++;
+                anim.add(objectAnimator);
             }
             value[p / taille][p % taille] = copy[p / taille][p % taille];
         }
@@ -442,7 +446,7 @@ public class Labyrinthe extends AppCompatActivity {
 
     void largeur_recursif(final ArrayList L, final int fin, final int size, ArrayList chemin) {
         s = new AnimatorSet();
-        Animator anim[] = new Animator[taille * taille * taille * taille];
+        ArrayList<Animator> anim = new ArrayList<>();
         int k = 0;
         if (!L.isEmpty()) {
             ArrayList liste = (ArrayList<ArrayList>) L.clone();
@@ -497,7 +501,7 @@ public class Labyrinthe extends AppCompatActivity {
                 }
             }
             if (k > 0) {
-                final Animator objectAnimator = anim[k - 1];
+                final Animator objectAnimator = anim.get(anim.size() - 1);
                 final ArrayList finalChemin1 = chemin;
                 objectAnimator.addListener(new AnimatorListenerAdapter() {
                     @Override
@@ -522,23 +526,24 @@ public class Labyrinthe extends AppCompatActivity {
         int h = heuristic(newPath, end);
         if (todo.isEmpty() || h >= todo.get(todo.size() - 1).first) {
             todo.add(new Pair(h,newPath));
+            return;
+        }
+        if (h <= todo.get(0).first){
+            todo.add(0, new Pair(h,newPath));
         }
         int a = 0;
         int b = todo.size() - 1;
         int ind = (a + b) / 2;
-        while (b - a > 1){
-            if (h == todo.get(ind).first){
-                break;
-            }
-            else if (h > todo.get(ind).first){
-                a = ind + 1;
+        while (b - a >= 1){
+            if (h > todo.get(ind).first){
+                a = ind;
             }
             else{
                 b = ind;
             }
             ind = (a + b) / 2;
         }
-        todo.add(ind, new Pair(h,newPath));
+        todo.add(b, new Pair(h,newPath));
     }
 
     void a_etoile(){
@@ -635,7 +640,7 @@ public class Labyrinthe extends AppCompatActivity {
         for (int i = 1; i < anim.size(); i++) {
             s.play(anim.get(i)).with(anim.get(0));
         }
-        anim.get(anim.size() - 1).addListener(new AnimatorListenerAdapter() {
+        anim.get(anim.size() -1).addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 animation(paths, path);
@@ -648,7 +653,7 @@ public class Labyrinthe extends AppCompatActivity {
         Button b;
         for (int i = 0; i < taille; i++)
             for (int j = 0; j < taille; j++)
-                if (value[i][j] > 1) {
+                if (value[i][j] != 1) {
                     value[i][j] = 0;
                     b = tab.getButton(i, j);
                     b.setBackgroundColor(Color.WHITE);

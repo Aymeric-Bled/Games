@@ -20,6 +20,8 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ToggleButton;
 
+import java.util.ArrayList;
+
 
 public class Jeu_de_la_vie extends AppCompatActivity {
     private Button main;
@@ -106,8 +108,7 @@ public class Jeu_de_la_vie extends AppCompatActivity {
     void jeu_de_la_vie() {
         AnimatorSet s = new AnimatorSet();
         Button b;
-        final ObjectAnimator anim[] = new ObjectAnimator[taille * taille];
-        int k = -1;
+        final ArrayList<ObjectAnimator> anim = new ArrayList<>();
         int voisin = 0;
         initialise();
         for (int i = 0; i < taille; i++) {
@@ -134,25 +135,25 @@ public class Jeu_de_la_vie extends AppCompatActivity {
                     if (copy[i][j] == 1) {
                         ObjectAnimator objectAnimator = ObjectAnimator.ofObject(b, "backgroundColor", new ArgbEvaluator(), ContextCompat.getColor(this, R.color.black), ContextCompat.getColor(this, R.color.black));
                         objectAnimator.setDuration(200);
-                        if (k==-1)
+                        if (anim.isEmpty())
                             s.play(objectAnimator);
                         else
-                            s.play(objectAnimator).with(anim[0]);
-                        anim[++k] = objectAnimator;
+                            s.play(objectAnimator).with(anim.get(0));
+                        anim.add(objectAnimator);
                     } else {
                         ObjectAnimator objectAnimator = ObjectAnimator.ofObject(b, "backgroundColor", new ArgbEvaluator(), ContextCompat.getColor(this, R.color.white), ContextCompat.getColor(this, R.color.white));
                         objectAnimator.setDuration(200);
-                        if (k==-1)
+                        if (anim.isEmpty())
                             s.play(objectAnimator);
                         else
-                            s.play(objectAnimator).with(anim[0]);
-                        anim[++k] = objectAnimator;
+                            s.play(objectAnimator).with(anim.get(0));
+                        anim.add(objectAnimator);
                     }
                 }
             }
 
-        if (k != -1) {
-            anim[0].addListener(new AnimatorListenerAdapter() {
+        if (!anim.isEmpty()) {
+            anim.get(0).addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);

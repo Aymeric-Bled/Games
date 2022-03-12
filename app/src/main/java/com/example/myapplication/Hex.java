@@ -52,7 +52,14 @@ public class Hex extends AppCompatActivity {
     private AnimatorSet s;
     private MCTS root;
 
-
+    class HexMove extends Move{
+        int x;
+        int y;
+        HexMove(int x, int y){
+            this.x = x;
+            this.y = y;
+        }
+    }
 
     class MCTS_Hex extends MCTS{
 
@@ -62,7 +69,7 @@ public class Hex extends AppCompatActivity {
         Hex h;
         ArrayList<int[]> hist;
 
-        MCTS_Hex(int color, int mov, MCTS parent, boolean[][][] t, int[] up, ArrayList empties, Hex h){
+        MCTS_Hex(int color, HexMove mov, MCTS parent, boolean[][][] t, int[] up, ArrayList empties, Hex h){
             super(color, mov, parent);
             this.t = t;
             this.up = up.clone();
@@ -73,39 +80,43 @@ public class Hex extends AppCompatActivity {
 
 
         @Override
-        boolean isGameOver(int[][] tab) {
+        boolean isGameOver() {
             return h.getRoot(up,0, 1) == h.getRoot(up,m - 1, 1) || h.getRoot(up,1, 0) == h.getRoot(up,1, m - 1);
         }
 
         @Override
-        int getWinner(int[][] tab) {
+        int getWinner() {
             if (h.getRoot(up,0, 1) == h.getRoot(up,m - 1, 1))
                 return 0;
             if (getRoot(up,1, 0) == getRoot(up,1, m - 1))
                 return 1;
-            assert false;
+            //assert false;
             return -1;
         }
 
         @Override
-        ArrayList<Integer> getLegalMoves(int[][] tab, int color) {
-            return (ArrayList<Integer>) empties.clone();
+        ArrayList<Move> getLegalMoves() {
+            ArrayList<Move> moves = new ArrayList<>();
+            for (int pos : empties){
+                moves.add(new HexMove(pos / m, pos % m));
+            }
+            return moves;
         }
 
         @Override
-        void doMove(int[][] tab, int color, int move) {
+        void doMove(int color, Move move) {
+            HexMove mov = (HexMove) move;
             hist.add(up.clone());
-            assert !t[1 - color][move / m][move % m];
-            tab[move / m][move % m] = color + 1;
-            t[color][move / m][move % m] = true;
-            int i = empties.indexOf(move);
+            assert !t[1 - color][mov.x][mov.y];
+            t[color][mov.x][mov.y] = true;
+            int i = empties.indexOf(mov.x * m + mov.y);
             empties.remove(i);
             //empties.remove((Object) move);
             for (int x = -1; x < 2; x++){
                 for (int y = -1; y < 2; y++){
-                    if (move / m + x >= 0 && move / m + x < m && move % m + y >= 0 && move % m + y < m && is_neighbor(move, move + m * x + y) && t[color][move / m + x][move % m + y]){
-                        int root = h.getRoot(up, move / m + x, move % m + y);
-                        int root2 = h.getRoot(up, move / m, move % m);
+                    if (mov.x + x >= 0 && mov.x + x < m && mov.y+ y >= 0 && mov.y + y < m && is_neighbor(mov.x * m + mov.y, mov.x * m + mov.y + m * x + y) && t[color][mov.x + x][mov.y + y]){
+                        int root = h.getRoot(up, mov.x + x, mov.y + y);
+                        int root2 = h.getRoot(up, mov.x, mov.y);
                         if (root != root2)
                             up[root] = root2;
                     }
@@ -114,23 +125,24 @@ public class Hex extends AppCompatActivity {
         }
 
         @Override
-        void undoMove(int[][] tab, int color, int move) {
-            tab[move / m][move % m] = 0;
-            t[color][move / m][move % m] = false;
-            t[1 - color][move / m][move % m] = false;
-            empties.add(move);
+        void undoMove(int color, Move move) {
+            HexMove mov = (HexMove) move;
+            t[color][mov.x][mov.y] = false;
+            t[1 - color][mov.x][mov.y] = false;
+            empties.add(mov.x * m + mov.y);
             up = hist.remove(hist.size() - 1);
         }
 
         @Override
-        MCTS newMCTS(int color, int move, MCTS parent) {
-            return new MCTS_Hex(color, move, parent , this.t, this.up, ((MCTS_Hex) parent).empties, this.h);
+        MCTS newMCTS(int color, Move move, MCTS parent) {
+            return new MCTS_Hex(color, (HexMove) move, parent , this.t, this.up, ((MCTS_Hex) parent).empties, this.h);
         }
 
         @Override
-        int chooseRandomMove(int[][] tab, int color) {
+        Move chooseRandomMove(int color) {
             //ArrayList legalMoves = this.getLegalMoves(tab, color);
-            return (int) empties.get((int) (Math.random() * empties.size()));
+            int move = (int) empties.get((int) (Math.random() * empties.size()));
+            return new HexMove(move / m, move % m);
             //return move_computer(t);
             //return (int) (Math.random() * m*m);
         }
@@ -140,9 +152,9 @@ public class Hex extends AppCompatActivity {
             return getApplicationContext();
         }
 
-        int rollout(int[][] tab, int mycolor, int taille){
+        int rollout(int mycolor, boolean useDepth, int maxDepth){
             int[] copy = up.clone();
-            int c = super.rollout(tab, mycolor, taille);
+            int c = super.rollout(mycolor, useDepth, maxDepth);
             up = copy;
             return c;
         }
@@ -230,30 +242,16 @@ public class Hex extends AppCompatActivity {
                 }
             }
         }
-        return new MCTS_Hex(this.color, -1, null, tab_color, up, (ArrayList) empties, this);
+        return new MCTS_Hex(this.color, null, null, tab_color, up, (ArrayList) empties, this);
     }
 
-    void updateTree(int move){
-
-        int[][] tab = new int[m][m];
-        for (int i = 0; i < m; i++){
-            for (int j = 0; j < m; j++){
-                if (tab_color[0][i][j]){
-                    tab[i][j] = 1;
-                }
-                else if (tab_color[1][i][j]){
-                    tab[i][j] = 2;
-                }
-                else {
-                    tab[i][j] = 0;
-                }
-            }
-        }
+    void updateTree(HexMove move){
         for (MCTS child : this.root.children){
-            if (child.move == move){
+            HexMove mv = (HexMove) child.move;
+            if (mv.x == move.x && mv.y == move.y){
                 this.root = child;
                 this.root.parent = null;
-                this.root.doMove(tab,color,move);
+                this.root.doMove(color,move);
                 return;
             }
         }
@@ -813,24 +811,10 @@ public class Hex extends AppCompatActivity {
         return  weight;
     }
 
-    int MCTS_move(){
-        int[][] tab = new int[m][m];
-        for (int i = 0; i < m; i++){
-            for (int j = 0; j < m; j++){
-                if (tab_color[0][i][j]){
-                    tab[i][j] = 1;
-                }
-                else if (tab_color[1][i][j]){
-                    tab[i][j] = 2;
-                }
-                else {
-                    tab[i][j] = 0;
-                }
-            }
-        }
+    HexMove MCTS_move(){
         //print_tab(tab, m);
         //return 1;
-        return this.root.getBestMove(tab, m, 4000);
+        return (HexMove) this.root.getBestMove(4000, false, 0);
     }
 
     int move_computer(boolean[][][] t){
@@ -874,10 +858,10 @@ public class Hex extends AppCompatActivity {
 
     void play_computer(){
         //int move= move_computer();
-        int move = MCTS_move();
+        HexMove move = MCTS_move();
         updateTree(move);
         //Toast.makeText(getApplicationContext(), "" + move, Toast.LENGTH_SHORT).show();
-        Button b=findViewById(tab_button[move/m][move%m]);
+        Button b=findViewById(tab_button[move.x][move.y]);
         final ObjectAnimator objectAnimator;
         s = new AnimatorSet();
         if (color == 0)
@@ -900,7 +884,7 @@ public class Hex extends AppCompatActivity {
                     play_computer();
             }
         });
-        tab_color[color][move/m][move%m] = true;
+        tab_color[color][move.x][move.y] = true;
         empties.remove(move);
         s.play(objectAnimator);
         s.start();
@@ -912,7 +896,7 @@ public class Hex extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (can_play(i*m+j)){
-                    updateTree(i * m + j);
+                    updateTree(new HexMove(i,j));
                     final ObjectAnimator objectAnimator;
                     s = new AnimatorSet();
                     if (color == 0)

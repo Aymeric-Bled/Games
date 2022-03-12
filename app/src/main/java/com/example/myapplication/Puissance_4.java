@@ -21,6 +21,8 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+
 public class Puissance_4 extends AppCompatActivity {
     private Button main;
     private Spinner player;
@@ -31,7 +33,9 @@ public class Puissance_4 extends AppCompatActivity {
     private String first_play[] = {"Le joueur commence","L'ordinateur commence"};
     private boolean player_begin = true;
     private Table tab;
-    private int t[][] = {{0,0,0,0,0,0,0},{0,0,0,0,0,0,0},{0,0,0,0,0,0,0},{0,0,0,0,0,0,0},{0,0,0,0,0,0,0},{0,0,0,0,0,0,0}};
+    private int width = 7;
+    private int height = 6;
+    private int t[][] = new int[height][width];
     private boolean couleur = true;
     private boolean fin = false;
     private boolean debut = true;
@@ -43,13 +47,13 @@ public class Puissance_4 extends AppCompatActivity {
         Button b;
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int w = (metrics.widthPixels - 7*20)/ 7;
+        int w = (metrics.widthPixels - width*20)/ width;
         GridLayout grille= findViewById(R.id.grille);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(w,w);
         params.setMargins(10,10,10,10);
-        tab = new Table(grille, 6, 7, this, params, w);
-        for (int i=0; i < 6; i++)
-            for (int j=0; j<7; j++) {
+        tab = new Table(grille, height, width, this, params, w);
+        for (int i=0; i < height; i++)
+            for (int j=0; j<width; j++) {
                 b = tab.getButton(i,j);
                 b.setBackgroundResource(R.drawable.whitebutton);
             }
@@ -62,8 +66,8 @@ public class Puissance_4 extends AppCompatActivity {
         fin=false;
         debut=true;
         Button b;
-        for (int i=0; i<6;i++)
-            for(int j=0; j<7; j++){
+        for (int i=0; i<height;i++)
+            for(int j=0; j<width; j++){
                 t[i][j]=0;
                 b=tab.getButton(i,j);
                 b.setBackgroundResource(R.drawable.whitebutton);
@@ -93,8 +97,8 @@ public class Puissance_4 extends AppCompatActivity {
     }
 
     int place(Button b){
-        for (int i=0; i<42; i++){
-            if (tab.getButton(i/7, i%7)==b) return i;
+        for (int i=0; i<width*height; i++){
+            if (tab.getButton(i/width, i%width)==b) return i;
         }
         return -1;
     }
@@ -111,7 +115,7 @@ public class Puissance_4 extends AppCompatActivity {
             int y=p-1;
             int j=p+1;
             while (y>=0 && present(t[n][y],s,len)) y--;
-            while (j<7 && present(t[n][j],s,len)) j++;
+            while (j<width && present(t[n][j],s,len)) j++;
             return j-y-1;
         }
         int y=p-1;
@@ -122,7 +126,7 @@ public class Puissance_4 extends AppCompatActivity {
             if (p - y <= 3 && t[n][y] == s[0]) l1--;
             y--;
         }
-        while (j<7 && present(t[n][j],s,len)) {
+        while (j<width && present(t[n][j],s,len)) {
             if (j - p <= 3 && t[n][j] == s[0]) l2++;
             j++;
         }
@@ -134,7 +138,7 @@ public class Puissance_4 extends AppCompatActivity {
             int x=n-1;
             int i=n+1;
             while (x>=0 && present(t[x][p],s,len)) x--;
-            while (i<6 && present(t[i][p],s,len)) i++;
+            while (i<height && present(t[i][p],s,len)) i++;
             return i-x-1;
         }
         int x=n-1;
@@ -145,7 +149,7 @@ public class Puissance_4 extends AppCompatActivity {
             if (n - x <= 3 && t[x][p] == s[0]) c1--;
             x--;
         }
-        while (i<6 && present(t[i][p],s,len)) {
+        while (i<height && present(t[i][p],s,len)) {
             if (i - n <= 3 && t[i][p] == s[0]) c2++;
             i++;
         }
@@ -159,7 +163,7 @@ public class Puissance_4 extends AppCompatActivity {
         if (len==1){
             int a=1;
             int b=-1;
-            while (n+a<6 && p+a<7 && present(t[n+a][p+a],s,len)) a++;
+            while (n+a<height && p+a<width && present(t[n+a][p+a],s,len)) a++;
             while (n+b>=0 && p+b>=0 && present(t[n+b][p+b],s,len)) b--;
             return a-b-1;
         }
@@ -167,7 +171,7 @@ public class Puissance_4 extends AppCompatActivity {
         int b=-1;
         int d1=1;
         int d2=-1;
-        while (n+a<6 && p+a<7 && present(t[n+a][p+a],s,len)) {
+        while (n+a<height && p+a<width && present(t[n+a][p+a],s,len)) {
             if (a <= 3 && t[n + a][p + a] == s[0]) d1++;
             a++;
         }
@@ -183,19 +187,19 @@ public class Puissance_4 extends AppCompatActivity {
         if (len==1){
             int a=1;
             int b=1;
-            while (n+a<6 && p-a>=0 && present(t[n+a][p-a],s,len)) a++;
-            while (n-b>=0 && p+b<7 && present(t[n-b][p+b],s,len)) b++;
+            while (n+a<height && p-a>=0 && present(t[n+a][p-a],s,len)) a++;
+            while (n-b>=0 && p+b<width && present(t[n-b][p+b],s,len)) b++;
             return a+b-1;
         }
         int a=1;
         int b=1;
         int d1=1;
         int d2=1;
-        while (n+a<6 && p-a>=0 && present(t[n+a][p-a],s,len)) {
+        while (n+a<height && p-a>=0 && present(t[n+a][p-a],s,len)) {
             if (a <= 3 && t[n + a][p - a] == s[0]) d1++;
             a++;
         }
-        while (n-b>=0 && p+b<7 && present(t[n-b][p+b],s,len)) {
+        while (n-b>=0 && p+b<width && present(t[n-b][p+b],s,len)) {
             if (b <= 3 && t[n - b][p + b] == s[0]) d2++;
             b++;
         }
@@ -204,9 +208,9 @@ public class Puissance_4 extends AppCompatActivity {
     }
 
     int[][] copy(int B[][]){
-        int C[][]=new int[6][7];
-        for (int i=0;i<6; i++)
-            for (int j=0; j<7; j++)
+        int C[][]=new int[height][width];
+        for (int i=0;i<height; i++)
+            for (int j=0; j<width; j++)
                 C[i][j]=B[i][j];
         return C;
     }
@@ -215,7 +219,7 @@ public class Puissance_4 extends AppCompatActivity {
     }
     boolean coup_victoire(int t[][],int c,boolean couleur){
         int i=0;
-        while (i < 6 && t[i][c] == 0) i++;
+        while (i < height && t[i][c] == 0) i++;
         int s[]=new int [1];
         if (couleur) {
             s[0]=1;
@@ -229,7 +233,7 @@ public class Puissance_4 extends AppCompatActivity {
         if (nb<=8){
             int B[][]=copy(C);
             int i=0;
-            while (i < 6 && B[i][c] == 0) i++;
+            while (i < height && B[i][c] == 0) i++;
             if (couleur) {
                 B[i - 1][c] = 1;
             } else {
@@ -247,7 +251,7 @@ public class Puissance_4 extends AppCompatActivity {
             }
             c=0;
             boolean b=true;
-            while (b && c<7){
+            while (b && c<width){
                 if (B[0][c]==0) b=coup_perdant_r(B,c,!couleur,nb+1);
                 c++;
             }
@@ -263,7 +267,7 @@ public class Puissance_4 extends AppCompatActivity {
         if (nb<=8){
             int B[][]=copy(C);
             int i=0;
-            while (i < 6 && B[i][c] == 0) i++;
+            while (i < height && B[i][c] == 0) i++;
             if (couleur) {
                 B[i - 1][c] = 1;
             } else {
@@ -278,7 +282,7 @@ public class Puissance_4 extends AppCompatActivity {
             }
             c=0;
             boolean b=false;
-            while (!b && c<7){
+            while (!b && c<width){
                 if (B[0][c]==0) b=coup_gagnant_r(B,c,!couleur,nb+1);
                 c++;
             }
@@ -292,7 +296,7 @@ public class Puissance_4 extends AppCompatActivity {
     }
     boolean coup_secour(int c, boolean couleur){
         int i=0;
-        while (i < 6 && t[i][c] == 0) i++;
+        while (i < height && t[i][c] == 0) i++;
         int s[]=new int [1];
         if (couleur) {
             s[0]=2;
@@ -305,7 +309,7 @@ public class Puissance_4 extends AppCompatActivity {
 
     boolean coup_donne(int c,boolean couleur){
         int i=0;
-        while (i < 6 && t[i][c] == 0) i++;
+        while (i < height && t[i][c] == 0) i++;
         int s[]=new int [1];
         if (couleur) {
             s[0]=2;
@@ -320,7 +324,7 @@ public class Puissance_4 extends AppCompatActivity {
     }
     boolean coup_gache(int c,boolean couleur){
         int i=0;
-        while (i < 6 && t[i][c] == 0) i++;
+        while (i < height && t[i][c] == 0) i++;
         int s[]=new int [1];
         if (couleur) {
             s[0]=1;
@@ -335,8 +339,8 @@ public class Puissance_4 extends AppCompatActivity {
     }
 
     void fin(int i){
-        int n=i/7;
-        int p=i%7;
+        int n=i/width;
+        int p=i%width;
         int s[]=new int[1];
         if (couleur) {
             s[0]=1;
@@ -379,9 +383,9 @@ public class Puissance_4 extends AppCompatActivity {
         }
 
         int c = 0;
-        while (c < 7 && t[0][c] != 0)
+        while (c < width && t[0][c] != 0)
             c++;
-        if (c >= 7){
+        if (c >= width){
             fin=true;
             AlertDialog.Builder fin = new AlertDialog.Builder(this);
             fin.setTitle("Macth nul");
@@ -409,85 +413,64 @@ public class Puissance_4 extends AppCompatActivity {
             fin.show();
         }
     }
-    int [] list(int f,int p[], boolean couleur){
-        int l[]={-1,-1,-1,-1,-1,-1,-1};
-        int j=0;
+    ArrayList<Integer> list(int f, ArrayList<Integer> p, boolean couleur){
+        ArrayList<Integer> l = new ArrayList<>();
         if (f==0)
-            for (int i=0; i<7 && p[i]>=0 ;i++){
-                if (t[0][p[i]]==0){
-                    l[j++]=p[i];
+            for (int i=0; i<p.size() && p.get(i)>=0 ;i++){
+                if (t[0][ p.get(i)]==0){
+                    l.add(p.get(i));
                 }
             }
         if (f==1)
-            for (int i=0; i<7 && p[i]>=0 ;i++){
-                if (coup_victoire(p[i],couleur)){
-                    l[j++]=p[i];
+            for (int i=0; i<p.size() &&  p.get(i)>=0 ;i++){
+                if (coup_victoire(p.get(i),couleur)){
+                    l.add(p.get(i));
                 }
             }
         if (f==2)
-            for (int i=0; i<7 && p[i]>=0 ;i++){
-                if (coup_gagnant(p[i],couleur)){
-                    l[j++]=p[i];
+            for (int i=0; i<p.size() && p.get(i)>=0 ;i++){
+                if (coup_gagnant(p.get(i),couleur)){
+                    l.add(p.get(i));
                 }
             }
         if (f==3)
-            for (int i=0; i<7 && p[i]>=0 ;i++){
-                if (!coup_perdant(p[i],couleur)){
-                    l[j++]=p[i];
+            for (int i=0; i<p.size() && p.get(i)>=0 ;i++){
+                if (!coup_perdant(p.get(i),couleur)){
+                    l.add(p.get(i));
                 }
             }
         if (f==4)
-            for (int i=0; i<7 && p[i]>=0 ;i++){
-                if (coup_secour(p[i],couleur)){
-                    l[j++]=p[i];
+            for (int i=0; i<p.size() && p.get(i)>=0 ;i++){
+                if (coup_secour(p.get(i),couleur)){
+                    l.add(p.get(i));
                 }
             }
         if (f==5)
-            for (int i=0; i<7 && p[i]>=0 ;i++){
-                if (!coup_donne(p[i],couleur)){
-                    l[j++]=p[i];
+            for (int i=0; i<p.size() && p.get(i)>=0 ;i++){
+                if (!coup_donne(p.get(i),couleur)){
+                    l.add(p.get(i));
                 }
             }
-        if (f==6)
-            for (int i=0; i<7 && p[i]>=0 ;i++){
-                if (!coup_gache(p[i],couleur)){
-                    l[j++]=p[i];
+        if (f==height)
+            for (int i=0; i<p.size() && p.get(i)>=0 ;i++){
+                if (!coup_gache(p.get(i),couleur)){
+                    l.add(p.get(i));
                 }
             }
         return l;
     }
-    int longueur(int l[]){
-        int i;
-        for (i=0; i<7; i++)
-            if (l[i]==-1) return i;
-        return i;
-    }
 
-    int [] alea(int l[]){
-        int a[]={-1,-1,-1,-1,-1,-1,-1};
-        int i=0;
-        int n=longueur(l);
-        while (n!=0){
-            int j=(int) (Math.random() * n);
-            a[i++]=l[j];
-            for (int k=j; k<n-1;k++){
-                l[k]=l[k+1];
-            }
-            n--;
-        }
-        return a;
-
-    }
     int max(int a,int b,int c, int d){
         if (a>=b && a>=c && a>=d) return a;
         if (b>=c && b>=d) return b;
         if (c>=d) return c;
         return d;
     }
-    int coup_smart(int l[]){
-        int c=l[0];
+    int coup_smart(ArrayList<Integer> l){
+        ArrayList<Integer> bestMoves = new ArrayList<>();
+        bestMoves.add(l.get(0));
         int i=0;
-        while (i < 6 && t[i][c] == 0) i++;
+        while (i < height && t[i][0] == 0) i++;
         int s[]=new int [2];
         if (couleur) {
             s[0]=1;
@@ -497,96 +480,101 @@ public class Puissance_4 extends AppCompatActivity {
             s[0]=2;
             s[1]=0;
         }
-        int m= max(ligne(t,i-1,c,s,2),ligne(t,i-1,c,s,2),diagonale_1(t,i-1,c,s,2),diagonale_2(t,i-1,c,s,2));
-        for (int j=1; j<longueur(l);j++){
+        int m= max(ligne(t,i-1,l.get(0),s,2),ligne(t,i-1,l.get(0),s,2),diagonale_1(t,i-1,l.get(0),s,2),diagonale_2(t,i-1,l.get(0),s,2));
+        for (int j=1; j<l.size();j++){
             i=0;
-            while (i < 6 && t[i][l[j]] == 0) i++;
-            int n=max(ligne(t,i-1,l[j],s,2),ligne(t,i-1,l[j],s,2),diagonale_1(t,i-1,l[j],s,2),diagonale_2(t,i-1,l[j],s,2));
+            while (i < height && t[i][l.get(j)] == 0) i++;
+            int n=max(ligne(t,i-1,l.get(j),s,2),ligne(t,i-1,l.get(j),s,2),diagonale_1(t,i-1,l.get(j),s,2),diagonale_2(t,i-1,l.get(j),s,2));
             if (n>m){
                 m=n;
-                c=l[j];
+                bestMoves.clear();
+                bestMoves.add(l.get(j));
+            }
+            else if (n == m){
+                bestMoves.add(l.get(j));
             }
 
         }
-        return c;
+        return bestMoves.get((int)(Math.random() * bestMoves.size()));
 
     }
 
     int move_computer(){
-        int l[]={0,1,2,3,4,5,6};
+        ArrayList<Integer> l = new ArrayList<>();
+        for (int j = 0; j < width; j++){
+            l.add(j);
+        }
         l=list(0,l,couleur);
-        int v[]=list(1,l,couleur);
-        if (v[0]!=-1) return v[(int)(Math.random() * (longueur(v)))];
-        int s[]=list(4,l,couleur);
-        if (s[0]!=-1) return s[(int)(Math.random() * (longueur(s)))];
-        int g[]=list(2,l,couleur);
-        if (g[0]!=-1) return g[(int)(Math.random() * (longueur(g)))];
-        int d[]=list(5,l,couleur);
-        if (d[0]==-1) return l[(int)(Math.random() * (longueur(l)))];
-        int p[]=list(3,d,couleur);
-        if (p[0]!=-1){
-            int ga_p[]=list(6,p,couleur);
-            if (ga_p[0]!=-1){
-                return coup_smart(alea(ga_p));
+        ArrayList<Integer> v=list(1,l,couleur);
+        if (!v.isEmpty()) return v.get((int)(Math.random() * v.size()));
+        ArrayList<Integer> s=list(4,l,couleur);
+        if (!s.isEmpty()) return s.get((int)(Math.random() * s.size()));
+        ArrayList<Integer> g=list(2,l,couleur);
+        if (!g.isEmpty()) return g.get((int)(Math.random() * g.size()));
+        ArrayList<Integer> d=list(5,l,couleur);
+        if (!d.isEmpty()) return l.get((int)(Math.random() * l.size()));
+        ArrayList<Integer> p=list(3,d,couleur);
+        if (p.isEmpty()){
+            ArrayList<Integer> ga_p=list(height,p,couleur);
+            if (!ga_p.isEmpty()){
+                return coup_smart(ga_p);
             }
-            return coup_smart(alea(p));
+            return coup_smart(p);
         }
-        int ga_d[]=list(6,d,couleur);
-        if (ga_d[0]!=-1){
-            return coup_smart(alea(ga_d));
+        ArrayList<Integer> ga_d=list(height,d,couleur);
+        if (!ga_d.isEmpty()){
+            return coup_smart(ga_d);
         }
-        return coup_smart(alea(d));
+        return coup_smart(d);
     }
 
     void play_computer() {
         int p = move_computer();
         int i = 0;
-        int ind = 0;
-        if (t[i][p % 7] == 0) {
+        if (t[i][p % width] == 0) {
             s = new AnimatorSet();
-            final Animator anim[] = new Animator[13];
-            while (i < 6 && t[i][p % 7] == 0) i++;
+            final ArrayList<Animator> anim = new ArrayList<>();
+            while (i < height && t[i][p % width] == 0) i++;
             if (couleur) {
-                t[i - 1][p % 7] = 1;
+                t[i - 1][p % width] = 1;
             } else {
-                t[i - 1][p % 7] = 2;
+                t[i - 1][p % width] = 2;
             }
 
             for (int l = 0; l < i; l++) {
                 if (couleur) {
-                    ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / 7, p % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.redbutton, R.drawable.redbutton);
+                    ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / width, p % width), "backgroundResource", new ArgbEvaluator(), R.drawable.redbutton, R.drawable.redbutton);
                     objectAnimator.setDuration(100);
                     if (l > 0) {
-                        ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - 7) / 7, (p - 7) % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
+                        ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - width) / width, (p - width) % width), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
                         objectAnimator2.setDuration(100);
-                        s.play(anim[ind - 1]).before(objectAnimator).before(objectAnimator2);
-                        anim[ind++] = objectAnimator2;
+                        s.play(anim.get(anim.size() - 1)).before(objectAnimator).before(objectAnimator2);
+                        anim.add(objectAnimator2);
                     } else {
                         s.play(objectAnimator);
                     }
-                    anim[ind++] = objectAnimator;
+                    anim.add(objectAnimator);
                 } else {
-                    ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / 7, p % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.yellowbutton, R.drawable.yellowbutton);
+                    ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / width, p % width), "backgroundResource", new ArgbEvaluator(), R.drawable.yellowbutton, R.drawable.yellowbutton);
                     objectAnimator.setDuration(100);
                     if (l > 0) {
-                        ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - 7) / 7, (p - 7) % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
+                        ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - width) / width, (p - width) % width), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
                         objectAnimator2.setDuration(100);
-                        s.play(anim[ind - 1]).before(objectAnimator).before(objectAnimator2);
-                        anim[ind++] = objectAnimator2;
+                        s.play(anim.get(anim.size() - 1)).before(objectAnimator).before(objectAnimator2);
+                        anim.add(objectAnimator2);
                     } else {
                         s.play(objectAnimator);
                     }
-                    anim[ind++] = objectAnimator;
+                    anim.add(objectAnimator);
 
                 }
-                p += 7;
+                p += width;
             }
-            final int k = ind;
-            final int position = p - 7;
-            anim[ind - 1].addListener(new AnimatorListenerAdapter() {
+            final int position = p - width;
+            anim.get(anim.size() - 1).addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
-                    super.onAnimationEnd(anim[k - 1]);
+                    super.onAnimationEnd(anim.get(anim.size() - 1));
                     fin(position);
                     couleur = !couleur;
                     if (!fin && nb_players == 0)
@@ -620,54 +608,52 @@ public class Puissance_4 extends AppCompatActivity {
                 if (can_play()) {
                     int p = place(button);
                     int i = 0;
-                    if (t[i][p % 7] == 0) {
-                        while (i < 6 && t[i][p % 7] == 0) i++;
+                    if (t[i][p % width] == 0) {
+                        while (i < height && t[i][p % width] == 0) i++;
                         if (couleur) {
-                            t[i - 1][p % 7] = 1;
+                            t[i - 1][p % width] = 1;
                         } else {
-                            t[i - 1][p % 7] = 2;
+                            t[i - 1][p % width] = 2;
                         }
                         s = new AnimatorSet();
-                        final Animator anim[] = new Animator[13];
-                        int ind = 0;
-                        p = p % 7;
+                        final ArrayList<Animator> anim = new ArrayList<>();
+                        p = p % width;
                         for (int l = 0; l < i; l++) {
                             if (couleur) {
-                                ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / 7, p % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.redbutton, R.drawable.redbutton);
+                                ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / width, p % width), "backgroundResource", new ArgbEvaluator(), R.drawable.redbutton, R.drawable.redbutton);
                                 objectAnimator.setDuration(100);
                                 if (l > 0) {
-                                    ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - 7) / 7, (p - 7) % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
+                                    ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - width) / width, (p - width) % width), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
                                     objectAnimator2.setDuration(100);
-                                    s.play(anim[ind - 1]).before(objectAnimator).before(objectAnimator2);
-                                    anim[ind++] = objectAnimator2;
+                                    s.play(anim.get(anim.size() - 1)).before(objectAnimator).before(objectAnimator2);
+                                    anim.add(objectAnimator2);
 
                                 } else {
                                     s.play(objectAnimator);
                                 }
-                                anim[ind++] = objectAnimator;
+                                anim.add(objectAnimator);
                             } else {
-                                ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / 7, p % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.yellowbutton, R.drawable.yellowbutton);
+                                ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab.getButton(p / width, p % width), "backgroundResource", new ArgbEvaluator(), R.drawable.yellowbutton, R.drawable.yellowbutton);
                                 objectAnimator.setDuration(100);
                                 if (l > 0) {
-                                    ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - 7) / 7, (p - 7) % 7), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
+                                    ObjectAnimator objectAnimator2 = ObjectAnimator.ofObject(tab.getButton((p - width) / width, (p - width) % width), "backgroundResource", new ArgbEvaluator(), R.drawable.whitebutton, R.drawable.whitebutton);
                                     objectAnimator2.setDuration(100);
-                                    s.play(anim[ind - 1]).before(objectAnimator).before(objectAnimator2);
-                                    anim[ind++] = objectAnimator2;
+                                    s.play(anim.get(anim.size() - 1)).before(objectAnimator).before(objectAnimator2);
+                                    anim.add(objectAnimator2);
                                 } else {
                                     s.play(objectAnimator);
                                 }
-                                anim[ind++] = objectAnimator;
+                                anim.add(objectAnimator);
 
                             }
-                            p += 7;
+                            p += width;
                         }
 
-                        final int k = ind;
-                        final int position = p - 7;
-                        anim[ind - 1].addListener(new AnimatorListenerAdapter() {
+                        final int position = p - width;
+                        anim.get(anim.size() - 1).addListener(new AnimatorListenerAdapter() {
                             @Override
                             public void onAnimationEnd(Animator animation) {
-                                super.onAnimationEnd(anim[k - 1]);
+                                super.onAnimationEnd(anim.get(anim.size() - 1));
                                 fin(position);
                                 couleur = !couleur;
                                 if (!fin && nb_players < 2) {
@@ -745,8 +731,8 @@ public class Puissance_4 extends AppCompatActivity {
             }
         });
 
-        for (int i=0; i<6; i++)
-            for (int j=0; j < 7; j++)
+        for (int i=0; i<height; i++)
+            for (int j=0; j < width; j++)
                 play(tab.getButton(i, j));
         new_();
     }

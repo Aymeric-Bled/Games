@@ -22,6 +22,8 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
+import java.util.ArrayList;
+
 public class Demineur extends AppCompatActivity {
     private Button main;
     private Button new_;
@@ -36,44 +38,7 @@ public class Demineur extends AppCompatActivity {
     private boolean tab_seen[][]=new boolean[taille][taille];
     private Button currentButton = null;
     private int x;
-    private int queue[][]=new int [taille][taille*taille + 1];
-    private int begin[] = new int [taille];
-    private int end[] = new int [taille];
-    private boolean free[] = new boolean[taille];
     private CharSequence ch[]={"0","1","2","3","4","5","6","7","8","9"};
-
-    int new_queue(){
-        int i=0;
-        while (!free[i]){
-            i++;
-        }
-        begin[i] = 0;
-        end [i] = 0;
-        free[i] = false;
-        return i;
-    }
-
-    boolean is_empty(int q) {
-        return end[q] == begin[q];
-    }
-
-    void enqueue (int q, int n){
-        queue[q][end[q]] = n;
-        end[q] = (end[q] + 1) % (taille * taille + 1);
-    }
-
-    int dequeue (int q){
-        if (is_empty(q)){
-            return -1;
-        }
-        int n = queue[q][begin[q]];
-        begin[q] = (begin[q] + 1) % (taille * taille + 1);
-        return n;
-    }
-
-    void free(int q){
-        free[q] = true;
-    }
 
     void create_demineur(){
         DisplayMetrics metrics = new DisplayMetrics();
@@ -95,7 +60,6 @@ public class Demineur extends AppCompatActivity {
                 b.setBackgroundColor(getColor(R.color.colorPrimaryDark));
                 tab_flag[i][j]=false;
             }
-            free[i] = true;
         }
         déminer.setWidth(metrics.widthPixels/2);
         flag.setWidth(metrics.widthPixels/2);
@@ -231,22 +195,21 @@ public class Demineur extends AppCompatActivity {
         boolean already_seen[]=new boolean[taille*taille];
         for (int i=0; i< taille*taille; i++)
             already_seen[i] = false;
-        int q1 = new_queue();
-        int q2;
+        ArrayList<Integer> q1 = new ArrayList<>();
+        ArrayList<Integer> q2;
         int position = place(currentButton);
         int p = position;
-        enqueue(q1,p);
+        q1.add(p);
         already_seen[p]=true;
         int n;
         int ind=-1;
-        int k = 0;
-        final Animator anim[] = new Animator[taille*taille];
+        final ArrayList<Animator> anim = new ArrayList<>();
         Button button;
         ObjectAnimator objectAnimator;
-        while(!is_empty(q1)){
-            q2 = new_queue();
-            while(!is_empty(q1)) {
-                n = dequeue(q1);
+        while(!q1.isEmpty()){
+            q2 = new ArrayList<>();
+            while(!q1.isEmpty()) {
+                n = q1.remove(0);
                 tab_seen[n / taille][n % taille] = true;
                 if (tab_mines[n / taille][n % taille]) {
                     button = tab.getButton(n / taille, n % taille);
@@ -255,60 +218,57 @@ public class Demineur extends AppCompatActivity {
                     else
                         objectAnimator = ObjectAnimator.ofObject(button, "backgroundResource", new ArgbEvaluator(), R.drawable.mine, R.drawable.mine);
                     objectAnimator.setDuration(100);
-                    if (ind >= 0) {
-                        s.play(objectAnimator).after(anim[ind]);
+                    if (!anim.isEmpty()) {
+                        s.play(objectAnimator).after(anim.get(ind));
                     } else {
                         s.play(objectAnimator);
                     }
-                    anim[k++] = objectAnimator;
+                    anim.add(objectAnimator);
                 }
                 if (n / taille > 0 && !already_seen[n - taille]) {
-                    enqueue(q2, n - taille);
+                    q2.add(n - taille);
                     already_seen[n - taille] = true;
                 }
                 if (n / taille > 0 && n % taille > 0 && !already_seen[n - taille - 1]) {
-                    enqueue(q2, n - taille - 1);
+                    q2.add(n - taille - 1);
                     already_seen[n - taille - 1] = true;
                 }
                 if (n / taille > 0 && n % taille < taille - 1 && !already_seen[n - taille + 1]) {
-                    enqueue(q2, n - taille + 1);
+                    q2.add(n - taille + 1);
                     already_seen[n - taille + 1] = true;
                 }
                 if (n % taille > 0 && !already_seen[n - 1]) {
-                    enqueue(q2, n - 1);
+                    q2.add(n - 1);
                     already_seen[n - 1] = true;
                 }
                 if (n / taille < taille - 1 && !already_seen[n + taille]) {
-                    enqueue(q2, n + taille);
+                    q2.add(n + taille);
                     already_seen[n + taille] = true;
                 }
                 if (n % taille < taille - 1 && !already_seen[n + 1]) {
-                    enqueue(q2, n + 1);
+                    q2.add(n + 1);
                     already_seen[n + 1] = true;
                 }
                 if (n / taille < taille - 1 && n % taille > 0 && !already_seen[n + taille - 1]) {
-                    enqueue(q2, n + taille - 1);
+                    q2.add(n + taille - 1);
                     already_seen[n + taille - 1] = true;
                 }
                 if (n / taille < taille - 1 && n % taille < taille - 1 && !already_seen[n + taille + 1]) {
-                    enqueue(q2, n + taille + 1);
+                    q2.add(n + taille + 1);
                     already_seen[n + taille + 1] = true;
                 }
 
             }
-            ind = k - 1 ;
-            free(q1);
+            ind = anim.size() - 1 ;
             q1 = q2;
         }
-        free(q1);
         objectAnimator = ObjectAnimator.ofObject(animation, "backgroundColor", new ArgbEvaluator(), Color.RED, Color.WHITE);
         if (ind >= 0) {
-            s.play(objectAnimator).after(anim[ind]);
+            s.play(objectAnimator).after(anim.get(ind));
         } else {
             s.play(objectAnimator);
         }
-        anim[k++] = objectAnimator;
-        final int l = k;
+        anim.add(objectAnimator);
         final AlertDialog.Builder fin = new AlertDialog.Builder(this);
         if (b) {
             fin.setTitle("Gagné!!!");
@@ -339,10 +299,10 @@ public class Demineur extends AppCompatActivity {
             }
         });
 
-        anim[k - 1].addListener(new AnimatorListenerAdapter() {
+        anim.get(anim.size() - 1).addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                super.onAnimationEnd(anim[l - 1]);
+                super.onAnimationEnd(anim.get(anim.size() - 1));
                 fin.show();
             }
         });
@@ -354,9 +314,9 @@ public class Demineur extends AppCompatActivity {
         boolean already_seen[]=new boolean[taille*taille];
         for (int i=0; i< taille*taille; i++)
             already_seen[i] = false;
-        int q1 = new_queue();
-        int q2;
-        enqueue(q1,p);
+        ArrayList<Integer> q1 = new ArrayList<>();
+        ArrayList<Integer> q2;
+        q1.add(p);
         already_seen[p]=true;
         int n;
         int ind=-1;
@@ -365,10 +325,10 @@ public class Demineur extends AppCompatActivity {
         Button b;
         ObjectAnimator objectAnimator;
         ObjectAnimator objectAnimator1;
-        while(!is_empty(q1)){
-            q2 = new_queue();
-            while(!is_empty(q1)) {
-                n = dequeue(q1);
+        while(!q1.isEmpty()){
+            q2 = new ArrayList<>();
+            while(!q1.isEmpty()) {
+                n = q1.remove(0);
                 tab_seen[n/taille][n%taille] = true;
                 b = tab.getButton(n/taille,n%taille);
                 objectAnimator = ObjectAnimator.ofObject(b, "backgroundColor", new ArgbEvaluator(), ((ColorDrawable)b.getBackground()).getColor(),Color.WHITE );
@@ -387,35 +347,35 @@ public class Demineur extends AppCompatActivity {
                 anim[k++] = objectAnimator1;
                 if (tab_values[n/taille][n%taille] == 0 ){
                     if (n/taille >0 && !already_seen[n-taille] && !tab_seen[n/taille - 1][n%taille]){
-                        enqueue(q2,n-taille);
+                        q2.add(n-taille);
                         already_seen[n-taille] = true;
                     }
                     if (n/taille >0 && n%taille >0 && !already_seen[n-taille - 1] && !tab_seen[n/taille - 1][n%taille - 1]){
-                        enqueue(q2,n-taille - 1);
+                        q2.add(n-taille - 1);
                         already_seen[n-taille - 1] = true;
                     }
                     if (n/taille >0 && n%taille <taille - 1  && !already_seen[n-taille + 1] && !tab_seen[n/taille - 1][n%taille + 1]){
-                        enqueue(q2,n-taille + 1);
+                        q2.add(n-taille + 1);
                         already_seen[n-taille + 1] = true;
                     }
                     if (n%taille > 0 && !already_seen[n-1] && !tab_seen[n/taille][n%taille - 1]){
-                        enqueue(q2,n-1);
+                        q2.add(n-1);
                         already_seen[n-1] = true;
                     }
                     if (n/taille < taille - 1 && !already_seen[n+taille] && !tab_seen[n/taille + 1][n%taille]){
-                        enqueue(q2,n+taille);
+                        q2.add(n+taille);
                         already_seen[n+taille] = true;
                     }
                     if (n%taille < taille - 1 && !already_seen[n+1] && !tab_seen[n/taille][n%taille + 1]){
-                        enqueue(q2,n+1);
+                        q2.add(n+1);
                         already_seen[n+1] = true;
                     }
                     if (n/taille < taille - 1 && n%taille >0 && !already_seen[n+taille - 1] && !tab_seen[n/taille + 1][n%taille - 1]){
-                        enqueue(q2,n+taille - 1);
+                        q2.add(n+taille - 1);
                         already_seen[n+taille - 1] = true;
                     }
                     if (n/taille < taille - 1 && n%taille <taille - 1 && !already_seen[n+taille + 1] && !tab_seen[n/taille + 1][n%taille + 1]) {
-                        enqueue(q2, n + taille + 1);
+                        q2.add( n + taille + 1);
                         already_seen[n + taille + 1] = true;
                     }
                 }
@@ -423,10 +383,8 @@ public class Demineur extends AppCompatActivity {
 
             }
             ind = k - 1 ;
-            free(q1);
             q1 = q2;
         }
-        free(q1);
     }
 
 
