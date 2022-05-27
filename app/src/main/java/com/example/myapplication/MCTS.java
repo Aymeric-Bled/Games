@@ -1,19 +1,20 @@
 package com.example.myapplication;
 
 import android.content.Context;
+import android.util.Pair;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
 abstract public class MCTS {
-    MCTS parent = null;
+    MCTS parent;
     boolean isLeaf = true;
     ArrayList<MCTS> children = new ArrayList();
-    float p = (float)1;
+    float p = (float)100;
     float n = 0;
     float w = 0;
-    int mycolor = -1;
-    Move move = null;
+    int mycolor;
+    Move move;
     int depth = 0;
 
     public MCTS(int color, Move move, MCTS parent){
@@ -39,8 +40,11 @@ abstract public class MCTS {
     MCTS chooseChildren(){
         float max = -1;
         ArrayList<MCTS> bestChildren = new ArrayList<>();
-        //Toast.makeText(getContext(), "test", Toast.LENGTH_SHORT).show();
-        for (MCTS child : this.children){
+        for (int i = 0; i < this.children.size(); i++){
+            MCTS child = this.children.get(i);
+            if (child == null){
+                break;
+            }
             float value = child.q() + child.u();
             if (value > max){
                 max = value;
@@ -54,13 +58,16 @@ abstract public class MCTS {
         return bestChildren.get((int) (Math.random() * bestChildren.size()));
     }
 
-    void expand(boolean useDepth, int maxDepth){
+    void expand(Plateau plateau, boolean useDepth, int maxDepth){
         if (this.isLeaf){
-            if (isGameOver()){
+            if (plateau.isGameOver(this.mycolor)){
                 MCTS node = this;
-                int c = getWinner();
+                int c = plateau.getWinner(1 - this.mycolor);
                 while (node != null){
-                    if (c != node.mycolor){
+                    if (c == -1){
+                        node.w += 0.5;
+                    }
+                    else if (c != node.mycolor){
                         node.w += 1;
                     }
                     node.n += 1;
@@ -68,21 +75,33 @@ abstract public class MCTS {
                 }
                 return;
             }
-            ArrayList<Move> legalMoves = getLegalMoves();
+            ArrayList<Move> legalMoves = plateau.getLegalMoves(this.mycolor);
             if (!legalMoves.isEmpty()){
-                this.isLeaf = false;
                 //int[] weight = weight(this.mycolor);
-                for (Move move : legalMoves){
-                    MCTS node = newMCTS(1 - this.mycolor, move, this);
-                    //node.p *= (weight[move] + 1);
-                    this.children.add(node);
+                ArrayList<Pair<Move,MCTS>> pairs = new ArrayList<>();
+
+                synchronized (this.children) {
+                    for (Move move : legalMoves) {
+                        MCTS node = newMCTS(1 - this.mycolor, move, this);
+                        //node.p *= (weight[move] + 1);
+                        this.children.add(node);
+                        pairs.add(new Pair(move, node));
+                    }
+                    this.isLeaf = false;
+                }
+                for (Pair<Move,MCTS> pair : pairs){
+                    Move move = pair.first;
+                    MCTS node = pair.second;
                     //Toast.makeText(getContext(), "test", Toast.LENGTH_SHORT).show();
                     //int[][] copy = copy(taille);
-                    node.doMove(this.mycolor, move);
-                    int c = node.rollout(1 - this.mycolor, useDepth, maxDepth);
-                    node.undoMove(this.mycolor, move);
+                    plateau.doMove(move);
+                    int c = plateau.rollout(1 - this.mycolor, useDepth, maxDepth);
+                    plateau.undoMove(move);
                     while (node != null){
-                        if (c != node.mycolor){
+                        if (c == -1){
+                            node.w += 0.5;
+                        }
+                        else if (c != node.mycolor){
                             node.w += 1;
                         }
                         node.n += 1;
@@ -95,57 +114,56 @@ abstract public class MCTS {
         }
         else{
             MCTS child = this.chooseChildren();
-            child.doMove(this.mycolor, child.move);
-            child.expand(useDepth, maxDepth);
-            child.undoMove(this.mycolor, child.move);
+            plateau.doMove(child.move);
+            child.expand(plateau, useDepth, maxDepth);
+            plateau.undoMove(child.move);
         }
 
 
     }
 
-    int rollout(int mycolor, boolean useDepth, int maxDepth){
-        ArrayList<Move> moves = new ArrayList<>();
-        int color = mycolor;
-        int depth = 0;
-        while (!isGameOver() && (!useDepth || depth < maxDepth)){
-            Move move = chooseRandomMove(color);
-            moves.add(move);
-            doMove(color,move);
-            color = 1 - color;
-            depth ++;
+    Move getBestMove(Plateau plateau, int time, int nbThread, boolean useDepth, int maxDepth){
+        final long timeout = System.currentTimeMillis() + time;
+        ArrayList<Plateau> plateaux = new ArrayList<>();
+        for (int i = 0; i < nbThread; i++){
+            plateaux.add(plateau.copy());
         }
-        int c = getWinner();
-        while (!moves.isEmpty()){
-            color = 1 - color;
-            Move move = moves.remove(moves.size() - 1);
-            undoMove(color,move);
-        }
-        return c;
-    }
-/*
-    int [][] copy(int[][] int taille){
-        int copy[][] = new int[taille][taille];
-        for (int i = 0; i < taille; i++) {
-            for (int j = 0; j < taille; j++) {
-                copy[i][j] = tab[i][j];
+        if (nbThread == 1){
+            Plateau p = plateaux.get(0);
+            while (System.currentTimeMillis() < timeout) {
+                expand(p, useDepth, maxDepth);
             }
         }
-        return copy;
-    }
- */
+        else {
+            ArrayList<Thread> threads = new ArrayList<>();
+            for (int i = 0; i < nbThread; i++) {
+                int finalI = i;
+                Thread thread = new Thread() {
+                    @Override
+                    public void run() {
+                        super.run();
+                        Plateau p = plateaux.get(finalI);
+                        while (System.currentTimeMillis() < timeout) {
+                            expand(p, useDepth, maxDepth);
+                        }
+                    }
+                };
+                thread.start();
+                threads.add(thread);
+            }
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
 
-    Move getBestMove(int time, boolean useDepth, int maxDepth){
-        final long timeout = System.currentTimeMillis() + time;
-        int i = 0;
-        while (System.currentTimeMillis() < timeout){
-            i += 1;
-            expand(useDepth, maxDepth);
         }
-        //Toast.makeText(getContext(), "" + i, Toast.LENGTH_SHORT).show();
         float max = -1000;
         ArrayList<Move> bestMoves = new ArrayList<>();
         for (MCTS child : children){
-            float value = child.q() - child.u();
+            float value = child.q();
             //Toast.makeText(getContext(), "" + value, Toast.LENGTH_SHORT).show();
             if (value > max){
                 max = value;
@@ -162,13 +180,7 @@ abstract public class MCTS {
         return bestMoves.get((int) (Math.random() * bestMoves.size()));
     }
 
-    abstract boolean isGameOver();
-    abstract int getWinner();
-    abstract ArrayList<Move> getLegalMoves();
-    abstract void doMove(int color, Move move);
-    abstract void undoMove(int color, Move move);
     abstract MCTS newMCTS(int color, Move move, MCTS parent);
-    abstract Move chooseRandomMove(int color);
     abstract Context getContext();
     abstract int[] weight(int color);
 }

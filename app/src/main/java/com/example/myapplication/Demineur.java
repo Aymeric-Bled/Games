@@ -16,6 +16,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
@@ -39,6 +40,7 @@ public class Demineur extends AppCompatActivity {
     private Button currentButton = null;
     private int x;
     private CharSequence ch[]={"0","1","2","3","4","5","6","7","8","9"};
+    private int height;
 
     void create_demineur(){
         DisplayMetrics metrics = new DisplayMetrics();
@@ -48,7 +50,7 @@ public class Demineur extends AppCompatActivity {
         params.setMargins(1,1,1,1);
         ScrollView scrollView = (ScrollView) findViewById(R.id.scroll);
         ConstraintLayout.LayoutParams p1 = (ConstraintLayout.LayoutParams) scrollView.getLayoutParams();
-        ConstraintLayout.LayoutParams p = new ConstraintLayout.LayoutParams(metrics.widthPixels, metrics.widthPixels);
+        ConstraintLayout.LayoutParams p = new ConstraintLayout.LayoutParams(metrics.widthPixels, height);
         p.topToBottom = p1.topToBottom;
         p.bottomToTop = p1.bottomToTop;
         scrollView.setLayoutParams(p);
@@ -396,11 +398,6 @@ public class Demineur extends AppCompatActivity {
         this.main = findViewById(R.id.main);
         this.new_= findViewById(R.id.new_);
         this.flag=findViewById(R.id.flag);
-        create_demineur();
-        initialise_mines();
-        for (int i=0; i< taille; i++)
-            for (int j=0; j< taille; j++)
-                move(tab.getButton(i,j));
 
         déminer.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -456,5 +453,22 @@ public class Demineur extends AppCompatActivity {
                 new_();
             }
         });
+        create_demineur();
+        initialise_mines();
+        for (int i=0; i< taille; i++)
+            for (int j=0; j< taille; j++)
+                move(tab.getButton(i,j));
+    }
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        height = findViewById(android.R.id.content).getHeight() - main.getHeight() - flag.getHeight();
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        ScrollView scrollView = (ScrollView) findViewById(R.id.scroll);
+        ConstraintLayout.LayoutParams p1 = (ConstraintLayout.LayoutParams) scrollView.getLayoutParams();
+        ConstraintLayout.LayoutParams p = new ConstraintLayout.LayoutParams(metrics.widthPixels, height);
+        p.topToBottom = p1.topToBottom;
+        p.bottomToTop = p1.bottomToTop;
+        scrollView.setLayoutParams(p);
     }
 }

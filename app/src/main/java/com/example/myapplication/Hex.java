@@ -11,7 +11,10 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.ArraySet;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -28,123 +31,462 @@ import android.widget.ToggleButton;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Set;
 
 public class Hex extends AppCompatActivity {
     private Button main;
     private Button new_;
-    private LinearLayout background;
     private Spinner player;
-    private String players[] = {"1 joueur","2 joueurs","0 joueur"};
+    private String players[] = {"1 joueur", "2 joueurs", "0 joueur"};
     private int nb_players = 1;
-    private int m=11;
     private int n;
+    private int m = 13;
     private double w;
     private double h;
     private int dx;
     private int dy;
-    private int tab_button[][]= new int [m][m];
-    private boolean tab_color[][][] = new boolean[2][m][m];
-    private ArraySet<Integer> empties = new ArraySet<>();
+    private int tab_button[][] = new int[m][m];
+    private HexPlateau plateau;
     private int color = 0;
     private boolean fin = false;
     private boolean play = false;
-    private AnimatorSet s;
+    private AnimatorSet s = new AnimatorSet();
     private MCTS root;
+    private Thread thread = null;
 
-    class HexMove extends Move{
+    class HexMove extends Move {
         int x;
         int y;
-        HexMove(int x, int y){
+
+        HexMove(int color, int x, int y) {
+            super(color);
             this.x = x;
             this.y = y;
         }
     }
 
-    class MCTS_Hex extends MCTS{
 
-        boolean[][][] t;
-        int[] up;
-        ArrayList<Integer> empties;
-        Hex h;
-        ArrayList<int[]> hist;
+    class HexPlateau extends Plateau {
+        private boolean[][][] tab_color;
+        private int[] up;
+        private ArrayList<int[]> histUp;
+        private ArrayList<Integer> empties;
+        /*
+        private ArrayList<Integer> pivotsRed;
+        private ArrayList<ArrayList<Integer>> histPivotsRed;
+        private ArrayList<Integer> pivotsBlue;
+        private ArrayList<ArrayList<Integer>> histPivotsBlue;
+        private HashMap<Integer,Integer> superUpRed;
+        private ArrayList<HashMap<Integer,Integer>> histSuperUpRed;
+        private HashMap<Integer,Integer> superUpBlue;
+        private ArrayList<HashMap<Integer,Integer>> histSuperUpBlue;
 
-        MCTS_Hex(int color, HexMove mov, MCTS parent, boolean[][][] t, int[] up, ArrayList empties, Hex h){
-            super(color, mov, parent);
-            this.t = t;
-            this.up = up.clone();
-            this.empties = empties;
-            this.hist = new ArrayList<>();
-            this.h = h;
-        }
+         */
 
 
-        @Override
-        boolean isGameOver() {
-            return h.getRoot(up,0, 1) == h.getRoot(up,m - 1, 1) || h.getRoot(up,1, 0) == h.getRoot(up,1, m - 1);
-        }
 
-        @Override
-        int getWinner() {
-            if (h.getRoot(up,0, 1) == h.getRoot(up,m - 1, 1))
-                return 0;
-            if (getRoot(up,1, 0) == getRoot(up,1, m - 1))
-                return 1;
-            //assert false;
-            return -1;
-        }
-
-        @Override
-        ArrayList<Move> getLegalMoves() {
-            ArrayList<Move> moves = new ArrayList<>();
-            for (int pos : empties){
-                moves.add(new HexMove(pos / m, pos % m));
+        HexPlateau() {
+            tab_color = new boolean[2][m][m];
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < m; j++) {
+                    tab_color[0][i][j] = false;
+                    tab_color[1][i][j] = false;
+                    if ((i != 0 || j != 0) && (i != 0 || j != m - 1) && (i != m - 1 || j != 0) && (i != m - 1 || j != m - 1)) {
+                        if (i == 0 || i == m - 1) {
+                            tab_color[0][i][j] = true;
+                        } else if (j == 0 || j == m - 1) {
+                            tab_color[1][i][j] = true;
+                        }
+                    }
+                }
             }
-            return moves;
+            empties = new ArrayList<>();
+            for (int i = 1; i < m - 1; i++) {
+                for (int j = 1; j < m - 1; j++) {
+                    empties.add(i * m + j);
+                }
+            }
+            //pivotsRed = new ArrayList<>();
+            //pivotsBlue = new ArrayList<>();
+            up = new int[m * m];
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < m; j++) {
+                    up[i * m + j] = i * m + j;
+                }
+            }
+
+
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < m; j++) {
+                    int mov = i * m + j;
+                    for (int x = -1; x < 2; x++) {
+                        for (int y = -1; y < 2; y++) {
+                            if (mov / m + x >= 0 && mov / m + x < m && mov % m + y >= 0 && mov % m + y < m && is_neighbor(mov, mov + m * x + y) && ((tab_color[0][mov / m + x][mov % m + y] && tab_color[0][mov / m][mov % m]) || (tab_color[1][mov / m + x][mov % m + y] && tab_color[1][mov / m][mov % m]))) {
+                                int root = getRoot(mov / m + x, mov % m + y);
+                                int root2 = getRoot(mov / m, mov % m);
+                                if (root != root2)
+                                    up[root] = root2;
+                            }
+                        }
+                    }
+                }
+            }
+            /*
+            superUpRed = new HashMap<>();
+            ArraySet<Integer> rootsRed = new ArraySet<>();
+            for (int i = 0; i < m; i++){
+                for (int j = 0; j < m; j++) {
+                    if (tab_color[0][i][j]) {
+                        rootsRed.add(getRoot(i, j));
+                    }
+                }
+            }
+            for (int root : rootsRed){
+                superUpRed.put(root, root);
+            }
+            superUpBlue = new HashMap<>();
+            ArraySet<Integer> rootsBlue = new ArraySet<>();
+            for (int i = 0; i < m; i++){
+                for (int j = 0; j < m; j++) {
+                    if (tab_color[1][i][j]) {
+                        rootsBlue.add(getRoot(i, j));
+                    }
+                }
+            }
+            for (int root : rootsBlue){
+                superUpBlue.put(root, root);
+            }
+             */
+            histUp = new ArrayList<>();
+            /*
+            histPivotsRed = new ArrayList<>();
+            histPivotsBlue = new ArrayList<>();
+            histSuperUpRed = new ArrayList<>();
+            histSuperUpBlue = new ArrayList<>();
+
+             */
         }
 
+        HexPlateau(HexPlateau plateau){
+            this.tab_color = new boolean[2][m][m];
+            for (int c = 0; c < 2; c++){
+                for (int i = 0; i < m; i++){
+                    for (int j = 0; j < m; j++){
+                        tab_color[c][i][j] = plateau.tab_color[c][i][j];
+                    }
+                }
+            }
+            this.up = plateau.up.clone();
+            /*
+            this.pivotsRed = (ArrayList<Integer>) plateau.pivotsRed.clone();
+            this.pivotsBlue = (ArrayList<Integer>) plateau.pivotsBlue.clone();
+            this.superUpRed = (HashMap<Integer, Integer>) plateau.superUpRed.clone();
+            this.superUpBlue = (HashMap<Integer, Integer>) plateau.superUpRed.clone();
+
+             */
+            this.empties = (ArrayList<Integer>) plateau.empties.clone();
+            this.histUp = new ArrayList<>();
+            for (int[] tab : plateau.histUp){
+                this.histUp.add(tab.clone());
+            }
+            /*
+            this.histPivotsRed = new ArrayList<>();
+            for (ArrayList<Integer> tab : plateau.histPivotsRed){
+                this.histPivotsRed.add((ArrayList<Integer>) tab.clone());
+            }
+            this.histPivotsBlue = new ArrayList<>();
+            for (ArrayList<Integer> tab : plateau.histPivotsBlue){
+                this.histPivotsBlue.add((ArrayList<Integer>) tab.clone());
+            }
+            this.histSuperUpRed = new ArrayList<>();
+            for (HashMap<Integer,Integer> tab : plateau.histSuperUpRed){
+                this.histSuperUpRed.add((HashMap<Integer,Integer>) tab.clone());
+            }
+            this.histSuperUpBlue = new ArrayList<>();
+            for (HashMap<Integer,Integer> tab : plateau.histSuperUpBlue){
+                this.histSuperUpBlue.add((HashMap<Integer,Integer>) tab.clone());
+            }
+
+             */
+        }
+
+        int getRoot(int i, int j) {
+            int n = i * m + j;
+            while (up[n] != n) {
+                n = up[n];
+            }
+            return n;
+        }
+/*
+        int getSuperRoot(int i, int j, int color){
+            assert tab_color[color][i][j];
+            int n = getRoot(i,j);
+            HashMap<Integer, Integer> superUp;
+            if (color == 0){
+                superUp = superUpRed;
+            }
+            else{
+                superUp = superUpBlue;
+            }
+            if (!superUp.containsKey(n)){
+                superUp.put(n,n);
+                return n;
+            }
+            while (superUp.get(n) != n){
+                n = superUp.get(n);
+            }
+            return n;
+        }
+
+ */
+
         @Override
-        void doMove(int color, Move move) {
+        public void doMove(Move move) {
             HexMove mov = (HexMove) move;
-            hist.add(up.clone());
-            assert !t[1 - color][mov.x][mov.y];
-            t[color][mov.x][mov.y] = true;
+            int color = mov.getColor();
+            histUp.add(up.clone());
+            /*
+            histPivotsRed.add((ArrayList<Integer>) pivotsRed.clone());
+            histPivotsBlue.add((ArrayList<Integer>) pivotsBlue.clone());
+            histSuperUpRed.add((HashMap<Integer, Integer>) superUpRed.clone());
+            histSuperUpBlue.add((HashMap<Integer, Integer>) superUpBlue.clone());
+
+             */
+            assert !tab_color[1 - color][mov.x][mov.y];
+            tab_color[color][mov.x][mov.y] = true;
             int i = empties.indexOf(mov.x * m + mov.y);
             empties.remove(i);
-            //empties.remove((Object) move);
-            for (int x = -1; x < 2; x++){
-                for (int y = -1; y < 2; y++){
-                    if (mov.x + x >= 0 && mov.x + x < m && mov.y+ y >= 0 && mov.y + y < m && is_neighbor(mov.x * m + mov.y, mov.x * m + mov.y + m * x + y) && t[color][mov.x + x][mov.y + y]){
-                        int root = h.getRoot(up, mov.x + x, mov.y + y);
-                        int root2 = h.getRoot(up, mov.x, mov.y);
+            for (int x = -1; x < 2; x++) {
+                for (int y = -1; y < 2; y++) {
+                    if (mov.x + x >= 0 && mov.x + x < m && mov.y + y >= 0 && mov.y + y < m && is_neighbor(mov.x * m + mov.y, mov.x * m + mov.y + m * x + y) && tab_color[color][mov.x + x][mov.y + y]) {
+                        int root = getRoot(mov.x + x, mov.y + y);
+                        int root2 = getRoot(mov.x, mov.y);
                         if (root != root2)
                             up[root] = root2;
                     }
                 }
             }
+            /*
+            if (color == 0){
+                if (!superUpRed.containsKey(getRoot(mov.x,mov.y))) {
+                    superUpRed.put(getRoot(mov.x,mov.y), getRoot(mov.x,mov.y));
+                    System.out.println("test");
+                }
+            }
+            else{
+                if (!superUpBlue.containsKey(getRoot(mov.x,mov.y))) {
+                    superUpBlue.put(getRoot(mov.x,mov.y), getRoot(mov.x,mov.y));
+                    System.out.println("test");
+                }
+            }
+            boolean done = false;
+            if (pivotsRed.contains(mov.x * m + mov.y)){
+                System.out.println("testRed");
+                resetSuperUp(pivotsRed, superUpRed, 0);
+                if (color == 0) {
+                    done = true;
+                }
+            }
+            if (pivotsBlue.contains(mov.x * m + mov.y)){
+                System.out.println("testBlue");
+                resetSuperUp(pivotsBlue, superUpBlue, 1);
+                if (color == 1) {
+                    done = true;
+                }
+            }
+            if (!done){
+                System.out.println("testNotDone");
+                if (color == 0) {
+                    lookForLinks(pivotsRed, superUpRed, color);
+                }
+                else{
+                    lookForLinks(pivotsBlue, superUpBlue, color);
+                }
+            }
+             */
+        }
+
+        /*
+
+        public void resetSuperUp(ArrayList<Integer> pivots, HashMap<Integer,Integer> superUp, int color){
+            pivots.clear();
+            superUp.clear();
+            ArraySet<Integer> roots = new ArraySet<>();
+            for (int i = 0; i < m; i++){
+                for (int j = 0; j < m; j++) {
+                    if (tab_color[color][i][j]) {
+                        roots.add(getRoot(i, j));
+                    }
+                }
+            }
+            for (int root : roots){
+                superUp.put(root, root);
+            }
+            lookForLinks(pivots, superUp, color);
+        }
+
+        public void lookForLinks(ArrayList<Integer> pivots, HashMap<Integer,Integer> superUp, int color) {
+            boolean change = true;
+            while (change){
+                change = false;
+                HashMap<String,ArrayList<Integer>> map = new HashMap<>();
+                for (int empty : empties){
+                    ArraySet<Integer> aroundRoots = getAroundRoots(empty, color);
+                    for (int aroundRoot1 : aroundRoots){
+                        for (int aroundRoot2 : aroundRoots){
+                            if (aroundRoot1 != aroundRoot2) {
+                                String key;
+                                if (aroundRoot1 < aroundRoot2) {
+                                    key = aroundRoot1 + "-" + aroundRoot2;
+                                } else {
+                                    key = aroundRoot2 + "-" + aroundRoot1;
+                                }
+                                if (map.containsKey(key)){
+                                    map.get(key).add(empty);
+                                }
+                                else{
+                                    ArrayList<Integer> list = new ArrayList<>();
+                                    list.add(empty);
+                                    map.put(key, list);
+                                }
+                            }
+                        }
+                    }
+                }
+                for (String key : map.keySet()){
+                    int i = 0;
+                    while (i < map.get(key).size()){
+                        if (pivots.contains(map.get(key).get(i))){
+                            map.get(key).remove((Object) map.get(key).get(i));
+                        }
+                        else{
+                            i++;
+                        }
+                    }
+                    if (map.get(key).size() >= 2){
+                        int root1 = Integer.parseInt(key.split("-")[0]);
+                        int root2 = Integer.parseInt(key.split("-")[1]);
+                        superUp.put(root1,root2);
+                        pivots.add(map.get(key).get(0));
+                        pivots.add(map.get(key).get(1));
+                        change = true;
+                    }
+                }
+            }
+        }
+
+        ArraySet<Integer> getAroundRoots(int i, int color) {
+            ArraySet<Integer> roots = new ArraySet<>();
+            if (i / m > 0 && in(i - m) && tab_color[color][(i - m) / m][(i - m) % m]) {
+                roots.add(getSuperRoot((i - m) / m, (i - m) % m, color));
+            }
+            if (i % m > 0 && in(i - 1) && tab_color[color][(i - 1) / m][(i - 1) % m]) {
+                roots.add(getSuperRoot((i - 1) / m, (i - 1) % m, color));
+            }
+            if (i / m < m - 1 && in(i + m) && tab_color[color][(i + m)/m][(i + m)%m]) {
+                roots.add(getSuperRoot((i + m)/m, (i + m)%m, color));
+            }
+            if (i % m < m - 1 && in(i + 1) && tab_color[color][(i + 1)/m][(i + 1)%m]) {
+                roots.add(getSuperRoot((i + 1)/m, (i + 1)%m, color));
+            }
+            if (i / m > 0 && i % m > 0 && in(i - m - 1) && tab_color[color][(i - m - 1)/m][(i - m - 1)%m]) {
+                roots.add(getSuperRoot( (i - m - 1)/m, (i - m - 1)%m, color));
+            }
+            if (i / m < m - 1 && i % m < m - 1 && in(i + m + 1) && tab_color[color][(i + m + 1)/m][(i + m + 1)%m]) {
+                roots.add(getSuperRoot( (i + m + 1)/m, (i + m + 1)%m, color));
+            }
+            return roots;
+        }
+        */
+
+        @Override
+        public void undoMove(Move move) {
+            HexMove mov = (HexMove) move;
+            int color = mov.getColor();
+            tab_color[color][mov.x][mov.y] = false;
+            tab_color[1 - color][mov.x][mov.y] = false;
+            empties.add(mov.x * m + mov.y);
+            up = histUp.remove(histUp.size() - 1);
+            /*
+            pivotsRed = histPivotsRed.remove(histPivotsRed.size() - 1);
+            pivotsBlue = histPivotsBlue.remove(histPivotsBlue.size() - 1);
+            superUpRed = histSuperUpRed.remove(histSuperUpRed.size() - 1);
+            superUpBlue = histSuperUpBlue.remove(histSuperUpBlue.size() - 1);
+
+             */
         }
 
         @Override
-        void undoMove(int color, Move move) {
-            HexMove mov = (HexMove) move;
-            t[color][mov.x][mov.y] = false;
-            t[1 - color][mov.x][mov.y] = false;
-            empties.add(mov.x * m + mov.y);
-            up = hist.remove(hist.size() - 1);
+        public Plateau copy() {
+            return new HexPlateau(this);
+        }
+/*
+        @Override
+        public int getWinner(int color) {
+            if (color == 0 && getSuperRoot( 0, 1, 0) == getSuperRoot( m - 1, 1, 0)) {
+                return 0;
+            }
+            if (color == 1 && getSuperRoot( 1, 0, 1) == getSuperRoot( 1, m - 1, 1)) {
+                return 1;
+            }
+            return -1;
+        }
+
+ */
+        @Override
+        public int getWinner(int color) {
+            if (getRoot( 0, 1) == getRoot( m - 1, 1))
+                return 0;
+            if (getRoot( 1, 0) == getRoot( 1, m - 1))
+                return 1;
+            assert false;
+            return -1;
+        }
+
+        /*
+        @Override
+        public boolean isGameOver(int color) {
+            return getSuperRoot( 0, 1, 0) == getSuperRoot( m - 1, 1, 0) || getSuperRoot( 1, 0, 1) == getSuperRoot( 1, m - 1, 1);
+        }
+         */
+        @Override
+        public boolean isGameOver(int color) {
+            return getRoot( 0, 1) == getRoot( m - 1, 1) || getRoot( 1, 0) == getRoot( 1, m - 1);
+        }
+
+        @Override
+        public ArrayList<Move> getLegalMoves(int color) {
+            ArrayList<Move> moves = new ArrayList<>();
+            for (int pos : empties) {
+                moves.add(new HexMove(color, pos / m, pos % m));
+            }
+            return moves;
+        }
+
+        @Override
+        int rollout(int mycolor, boolean useDepth, int maxDepth) {
+            int[] copy = up.clone();
+            int c = super.rollout(mycolor, useDepth, maxDepth);
+            up = copy;
+            return c;
+        }
+        @Override
+        Move chooseRandomMove(int color){
+            int n = empties.get((int) (Math.random() * empties.size()));
+            return new HexMove(color, n/m, n%m);
+        }
+    }
+
+    class MCTS_Hex extends MCTS {
+
+        MCTS_Hex(int color, Move mov, MCTS parent) {
+            super(color, mov, parent);
         }
 
         @Override
         MCTS newMCTS(int color, Move move, MCTS parent) {
-            return new MCTS_Hex(color, (HexMove) move, parent , this.t, this.up, ((MCTS_Hex) parent).empties, this.h);
-        }
-
-        @Override
-        Move chooseRandomMove(int color) {
-            //ArrayList legalMoves = this.getLegalMoves(tab, color);
-            int move = (int) empties.get((int) (Math.random() * empties.size()));
-            return new HexMove(move / m, move % m);
-            //return move_computer(t);
-            //return (int) (Math.random() * m*m);
+            return new MCTS_Hex(color, move, parent);
         }
 
         @Override
@@ -152,16 +494,8 @@ public class Hex extends AppCompatActivity {
             return getApplicationContext();
         }
 
-        int rollout(int mycolor, boolean useDepth, int maxDepth){
-            int[] copy = up.clone();
-            int c = super.rollout(mycolor, useDepth, maxDepth);
-            up = copy;
-            return c;
-        }
 
-
-
-        int[] weight(int color){
+        int[] weight(int color) {
             int[] weight = new int[m * m];
 /*
             boolean[] path_intersection = path_intersection(t,false);
@@ -212,192 +546,116 @@ public class Hex extends AppCompatActivity {
 
     }
 
-    MCTS newMCTS(){
-        int up[] = new int[m*m];
-        for (int i = 0; i < m; i++){
-            for (int j = 0; j < m; j++){
-                up[i * m + j] = i * m + j;
-            }
-        }
-        for (int i = 0; i < m; i++){
-            for (int j = 0; j < m; j++) {
-                int mov = i * m + j;
-                for (int x = -1; x < 2; x++){
-                    for (int y = -1; y < 2; y++){
-                        if (mov / m + x >= 0 && mov / m + x < m && mov % m + y >= 0 && mov % m + y < m && is_neighbor(mov, mov + m * x + y) && ((tab_color[0][mov / m + x][mov % m + y] && tab_color[0][mov / m][mov % m]) || (tab_color[1][mov / m + x][mov % m + y] && tab_color[1][mov / m][mov % m]))){
-                            int root = getRoot(up, mov / m + x, mov % m + y);
-                            int root2 = getRoot(up, mov / m, mov % m);
-                            if (root != root2)
-                                up[root] = root2;
-                        }
-                    }
-                }
-            }
-        }
-        ArrayList empties = new ArrayList();
-        for (int i = 1; i < m - 1; i ++){
-            for (int j = 1; j < m - 1; j++){
-                if (is_free(tab_color, i * m + j)){
-                    empties.add(i * m + j);
-                }
-            }
-        }
-        return new MCTS_Hex(this.color, null, null, tab_color, up, (ArrayList) empties, this);
+    MCTS newMCTS() {
+        return new MCTS_Hex(this.color, null, null);
     }
 
-    void updateTree(HexMove move){
-        for (MCTS child : this.root.children){
+    void updateTree(HexMove move) {
+        for (MCTS child : this.root.children) {
             HexMove mv = (HexMove) child.move;
-            if (mv.x == move.x && mv.y == move.y){
+            if (mv.x == move.x && mv.y == move.y) {
                 this.root = child;
                 this.root.parent = null;
-                this.root.doMove(color,move);
                 return;
             }
         }
         this.root = newMCTS();
     }
 
-    int getRoot(int[] up, int i, int j){
-        int n = i * m + j;
-        while (up[n] != n){
-            n = up[n];
-        }
-        return n;
-    }
 
-    boolean is_neighbor(int i, int j){
-        if (!in(i) || !in(j)){
+    boolean is_neighbor(int i, int j) {
+        if (!in(i) || !in(j)) {
             return false;
         }
-        if (i/m > 0 && j == i - m){
+        if (i / m > 0 && j == i - m) {
             return true;
         }
-        if (i%m > 0 && j == i - 1){
+        if (i % m > 0 && j == i - 1) {
             return true;
         }
-        if (i/m < m - 1 && j == i + m){
+        if (i / m < m - 1 && j == i + m) {
             return true;
         }
-        if (i%m < m - 1 && j == i + 1){
+        if (i % m < m - 1 && j == i + 1) {
             return true;
         }
-        if (i/m > 0  && i%m > 0&& j == i - m - 1){
+        if (i / m > 0 && i % m > 0 && j == i - m - 1) {
             return true;
         }
-        if (i/m < m - 1 && i%m < m - 1 && j == i + m + 1){
+        if (i / m < m - 1 && i % m < m - 1 && j == i + m + 1) {
             return true;
         }
         return false;
     }
 
-    boolean is_semi_linked(boolean[][][] t, int i, int j){
-        if (!in(i) || !in(j)){
+    boolean is_semi_linked(boolean[][][] t, int i, int j) {
+        if (!in(i) || !in(j)) {
             return false;
         }
-        if (i/m > 1 && i% m >0 && j == n-2*m-1 && is_free(t, n-m-1) && is_free(t, n - m)){
+        if (i / m > 1 && i % m > 0 && j == n - 2 * m - 1 && is_free(t, n - m - 1) && is_free(t, n - m)) {
             return true;
         }
-        if (i/m > 0 && i% m < m - 1 && j == n-m+1 && is_free(t, n-m) && is_free(t, n +1)){
+        if (i / m > 0 && i % m < m - 1 && j == n - m + 1 && is_free(t, n - m) && is_free(t, n + 1)) {
             return true;
         }
-        if (i/m < m - 1 && i% m < m - 2 && j == n+m+2 && is_free(t, n+1) && is_free(t, n+m+1)){
+        if (i / m < m - 1 && i % m < m - 2 && j == n + m + 2 && is_free(t, n + 1) && is_free(t, n + m + 1)) {
             return true;
         }
-        if (i/m < m - 2 && i% m < m - 1 && j == n+2*m+1 && is_free(t, n+m+1) && is_free(t, n + m)){
+        if (i / m < m - 2 && i % m < m - 1 && j == n + 2 * m + 1 && is_free(t, n + m + 1) && is_free(t, n + m)) {
             return true;
         }
-        if (i/m < m - 1 && i% m >0 && j == n+m-1 && is_free(t, n+m) && is_free(t, n - 1)){
+        if (i / m < m - 1 && i % m > 0 && j == n + m - 1 && is_free(t, n + m) && is_free(t, n - 1)) {
             return true;
         }
-        if (i/m > 0 && i% m >1 && j == n-2*m-1 && is_free(t, n-1) && is_free(t, n - m - 1)){
+        if (i / m > 0 && i % m > 1 && j == n - 2 * m - 1 && is_free(t, n - 1) && is_free(t, n - m - 1)) {
             return true;
         }
         return false;
     }
 
-    boolean is_under_semi_linked(boolean t[][][], int i, int c){
+    boolean is_under_semi_linked(boolean t[][][], int i, int c) {
         if (!is_free(t, i))
             return false;
-        if (is_free(t, i-m) && is_owner(t, 1-c, i-m-1) && is_owner(t, 1-c, i+1))
+        if (is_free(t, i - m) && is_owner(t, 1 - c, i - m - 1) && is_owner(t, 1 - c, i + 1))
             return true;
 
-        if (is_free(t, i+1) && is_owner(t, 1-c,i-m) && is_owner(t, 1-c,i+m+1))
+        if (is_free(t, i + 1) && is_owner(t, 1 - c, i - m) && is_owner(t, 1 - c, i + m + 1))
             return true;
-        if (is_free(t, i+m+1) && is_owner(t, 1-c,i+1) && is_owner(t, 1-c,i-m))
+        if (is_free(t, i + m + 1) && is_owner(t, 1 - c, i + 1) && is_owner(t, 1 - c, i - m))
             return true;
-        if (is_free(t, i+m) && is_owner(t, 1-c,i+m+1) && is_owner(t, 1-c,i-1))
+        if (is_free(t, i + m) && is_owner(t, 1 - c, i + m + 1) && is_owner(t, 1 - c, i - 1))
             return true;
-        if (is_free(t, i-1) && is_owner(t, 1-c,i+m) && is_owner(t, 1-c,i-m-1))
+        if (is_free(t, i - 1) && is_owner(t, 1 - c, i + m) && is_owner(t, 1 - c, i - m - 1))
             return true;
-        if (is_free(t, i-m-1) && is_owner(t, 1-c,i-1) && is_owner(t, 1-c,i+m))
+        if (is_free(t, i - m - 1) && is_owner(t, 1 - c, i - 1) && is_owner(t, 1 - c, i + m))
             return true;
 
         return false;
     }
 
-    boolean is_owner(boolean t[][][], int c, int i){
+    boolean is_owner(boolean t[][][], int c, int i) {
 
-        return in(i) && t[c][i/m][i%m];
-
-    }
-
-    boolean is_free(boolean t[][][], int n){
-        return !is_owner(t,0,n) && !is_owner(t,1,n);
-    }
-
-
-
-    boolean is_connected(boolean t[][][], int n, int p){
-
-        return (in(p) && in(n) && (is_neighbor(n,p) || is_semi_linked(t, n,p)));
+        return in(i) && t[c][i / m][i % m];
 
     }
 
-    boolean in (int n){
-        return !(n/m == 0 && n%m == 0 || n/m == m - 1 && n%m == 0 ||n/m == 0 && n%m == m - 1 ||n/m == m - 1 && n%m == m - 1);
+    boolean is_free(boolean t[][][], int n) {
+        return !is_owner(t, 0, n) && !is_owner(t, 1, n);
     }
 
-    boolean is_winning(boolean[][][] t, int color){
-        boolean already_seen[]= new boolean[m * m];
-        int n;
-        int k;
-        for (int i = 0; i < m*m; i++)
-            already_seen[i] = false;
-        ArrayList q = new ArrayList();
-        if (color == 0)
-            for (int i = 1; i < m - 1; i++) {
-                q.add(i);
-                already_seen[i] = true;
-            }
-        else{
-            for (int i = 1; i < m - 1; i++){
-                q.add(m * i);
-                already_seen[m * i] = true;
-            }
-        }
-        while (!q.isEmpty()){
-            n = (int) q.remove(0);
-            for (int i = 1; i< m - 1; i++){
-                for (int j = 1; j < m - 1; j++){
-                    k = m * i + j;
-                    if (!already_seen[k] && is_owner(t, color, k) && is_neighbor(n,k)) {
-                        if (i == m - 2 && color == 0 || j == m - 2 && color == 1)
-                            return true;
-                        q.add(k);
-                        already_seen[k] = true;
-                    }
 
-                }
-            }
+    boolean is_connected(boolean t[][][], int n, int p) {
 
-        }
-        return false;
+        return (in(p) && in(n) && (is_neighbor(n, p) || is_semi_linked(t, n, p)));
+
     }
 
-    void end(){
+    boolean in(int n) {
+        return !(n / m == 0 && n % m == 0 || n / m == m - 1 && n % m == 0 || n / m == 0 && n % m == m - 1 || n / m == m - 1 && n % m == m - 1);
+    }
 
-        if (is_winning(tab_color, color)) {
+    void end() {
+        if (plateau.isGameOver(color)) {
             fin = true;
             AlertDialog.Builder fin = new AlertDialog.Builder(this);
             fin.setTitle("Fin !!!");
@@ -433,98 +691,83 @@ public class Hex extends AppCompatActivity {
 
     }
 
-    void create_hex(){
+    void create_hex() {
         Button b;
         int id;
-        empties = new ArraySet<>();
-        for (int i=0; i < m; i++)
-            for (int j=0; j<m; j++){
-                tab_color[0][i][j] = false;
-                tab_color[1][i][j] = false;
-                if (i > 0 && j > 0 && i < m - 1 && j < m - 1)
-                    empties.add(i * m + j);
-                if ((i!=0 || j!=0) && (i!=0 || j!=m-1) && (i!=m-1 || j!=0) && (i!=m-1 || j!=m-1)) {
-                    if(i==0 || i==m-1) {
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < m; j++) {
+                if ((i != 0 || j != 0) && (i != 0 || j != m - 1) && (i != m - 1 || j != 0) && (i != m - 1 || j != m - 1)) {
+                    if (i == 0 || i == m - 1) {
                         b = new Button(this);
                         id = Button.generateViewId();
                         b.setId(id);
                         tab_button[i][j] = id;
-                        b.setMinimumHeight(0);
-                        b.setMinimumWidth(0);
                         b.setBackgroundResource(R.drawable.red_hexagon);
-                        b.setHeight((int) h);
-                        b.setWidth((int) w);
-                        b.setX((int) (dx + (3 * j * w) / 4));
-                        b.setY((int) (dy + h * i + (h * (m - 2 - j)) / 2));
-                        addContentView(b,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-                        tab_color[0][i][j] = true;
-                    }
-                    else{
-                        if(j==0 || j==m-1) {
-                            b = new Button(this);
-                            id = Button.generateViewId();
-                            b.setId(id);
-                            tab_button[i][j] = id;
-                            b.setMinimumHeight(0);
-                            b.setMinimumWidth(0);
-                            b.setBackgroundResource(R.drawable.blue_hexagon);
-                            b.setHeight((int) h);
-                            b.setWidth((int) w);
-                            b.setX((int) (dx + (3 * j * w) / 4));
-                            b.setY((int) (dy + h * i + (h * (m - 2 - j)) / 2));
-                            addContentView(b,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-                            tab_color[1][i][j] = true;
-                        }
-                        else{
-                            b = new Button(this);
-                            id = Button.generateViewId();
-                            b.setId(id);
-                            tab_button[i][j] = id;
-                            b.setMinimumHeight(0);
-                            b.setMinimumWidth(0);
-                            b.setBackgroundResource(R.drawable.white_hexagon);
-                            b.setHeight((int) h);
-                            b.setWidth((int) w);
-                            b.setX((int) (dx + (3 * j * w) / 4));
-                            b.setY((int) (dy + h * i + (h * (m - 2 - j)) / 2));
-                            addContentView(b,new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-
-                        }
+                        addContentView(b, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    } else if (j == 0 || j == m - 1) {
+                        b = new Button(this);
+                        id = Button.generateViewId();
+                        b.setId(id);
+                        tab_button[i][j] = id;
+                        b.setBackgroundResource(R.drawable.blue_hexagon);
+                        addContentView(b, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                    } else {
+                        b = new Button(this);
+                        id = Button.generateViewId();
+                        b.setId(id);
+                        tab_button[i][j] = id;
+                        b.setBackgroundResource(R.drawable.white_hexagon);
+                        addContentView(b, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                     }
                 }
             }
+
     }
 
 
-    void new_(){
+    void new_() {
+        s.pause();
+        if (thread != null) {
+            thread.interrupt();
+        }
         fin = false;
+        plateau = new HexPlateau();
         Button b;
-        empties = new ArraySet<>();
-        for (int i = 1; i< m-1; i++)
-            for (int j= 1; j < m-1; j++){
-                b=findViewById(tab_button[i][j]);
+        for (int i = 1; i < m - 1; i++)
+            for (int j = 1; j < m - 1; j++) {
+                b = findViewById(tab_button[i][j]);
                 b.setBackgroundResource(R.drawable.white_hexagon);
-                tab_color[0][i][j] = false;
-                tab_color[1][i][j] = false;
-                empties.add(i * m + j);
             }
         this.root = newMCTS();
-        if (nb_players != 2)
-            play_computer();
-    }
+        if (nb_players != 2) {
 
+            s = new AnimatorSet();
+            ObjectAnimator objectAnimator = ObjectAnimator.ofObject(main, "TextColor", new ArgbEvaluator(), Color.BLACK, Color.BLACK);
+            objectAnimator.setDuration(100);
+            s.play(objectAnimator);
+            objectAnimator.addListener(
+                    new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            play_computer();
+                        }
+                    }
+            );
+            s.start();
+        }
+    }
 
 
     int compute_weight(int n, int c, boolean semi_linked) {
 
         int w = 0;
-        boolean already_seen[]= new boolean[m*m];
-        boolean connected[]= new boolean[m*m];
+        boolean already_seen[] = new boolean[m * m];
+        boolean connected[] = new boolean[m * m];
         int k;
 
-        for (int i = 0; i < m*m; i++) {
+        for (int i = 0; i < m * m; i++) {
             if (in(i)) {
-                connected[i] = ((semi_linked && is_semi_linked(tab_color,n, i) || !semi_linked && is_connected(tab_color,n, i)) && is_owner(tab_color,c, i));
+                connected[i] = ((semi_linked && is_semi_linked(plateau.tab_color, n, i) || !semi_linked && is_connected(plateau.tab_color, n, i)) && is_owner(plateau.tab_color, c, i));
                 already_seen[i] = false;
             }
 
@@ -532,7 +775,7 @@ public class Hex extends AppCompatActivity {
         ArrayList q1;
         ArrayList q2;
 
-        for (int p = 0; p < m*m; p++) {
+        for (int p = 0; p < m * m; p++) {
 
             if (in(p) && connected[p]) {
 
@@ -549,9 +792,9 @@ public class Hex extends AppCompatActivity {
 
                         k = (int) q1.remove(0);
 
-                        for (int i = 0; i < m*m ; i++) {
+                        for (int i = 0; i < m * m; i++) {
 
-                            if (in(i) && is_connected(tab_color,k, i) && is_owner(tab_color,c, i) && !already_seen[i]) {
+                            if (in(i) && is_connected(plateau.tab_color, k, i) && is_owner(plateau.tab_color, c, i) && !already_seen[i]) {
 
                                 already_seen[i] = true;
                                 q2.add(i);
@@ -563,7 +806,7 @@ public class Hex extends AppCompatActivity {
 
                 }
 
-                for (k = 0; k < m*m; k++) {
+                for (k = 0; k < m * m; k++) {
                     if (in(k) && already_seen[k] && connected[k]) {
                         connected[k] = false;
 
@@ -577,19 +820,19 @@ public class Hex extends AppCompatActivity {
     }
 
 
-    boolean []component(boolean[][][] t, int n, int c){
-        boolean connected[]= new boolean[m*m];
-        for (int i=0; i<m*m; i++) {
+    boolean[] component(boolean[][][] t, int n, int c) {
+        boolean connected[] = new boolean[m * m];
+        for (int i = 0; i < m * m; i++) {
             connected[i] = false;
         }
-        ArrayList q =new ArrayList<>();
+        ArrayList q = new ArrayList<>();
         q.add(n);
         connected[n] = true;
         int k;
         while (!q.isEmpty()) {
             k = (int) q.remove(0);
             for (int i = 0; i < m * m; i++) {
-                if (is_connected(t,i, k) && is_owner(t,c, i) && !connected[i]) {
+                if (is_connected(t, i, k) && is_owner(t, c, i) && !connected[i]) {
                     q.add(i);
                     connected[i] = true;
                 }
@@ -598,10 +841,10 @@ public class Hex extends AppCompatActivity {
         return connected;
     }
 
-    boolean []next(boolean[][][] t, int n, int c, boolean already_seen[], boolean end_component[], boolean semi_linked, boolean under_semi_linked){
-        boolean connected[]= new boolean[m*m];
-        boolean next[]= new boolean[m*m];
-        for (int i=0; i<m*m; i++) {
+    boolean[] next(boolean[][][] t, int n, int c, boolean already_seen[], boolean end_component[], boolean semi_linked, boolean under_semi_linked) {
+        boolean connected[] = new boolean[m * m];
+        boolean next[] = new boolean[m * m];
+        for (int i = 0; i < m * m; i++) {
             next[i] = false;
             connected[i] = false;
         }
@@ -609,14 +852,14 @@ public class Hex extends AppCompatActivity {
         q.add(n);
         connected[n] = true;
         int k;
-        while (!q.isEmpty()){
+        while (!q.isEmpty()) {
             k = (int) q.remove(0);
-            for (int i = 0; i < m*m; i++){
-                if (is_owner(t,c,i) && ((!semi_linked && is_neighbor(i,k)) || (semi_linked && is_connected(t,i,k)))  && !connected[i]){
+            for (int i = 0; i < m * m; i++) {
+                if (is_owner(t, c, i) && ((!semi_linked && is_neighbor(i, k)) || (semi_linked && is_connected(t, i, k))) && !connected[i]) {
                     q.add(i);
                     connected[i] = true;
                 }
-                if (((!semi_linked && is_neighbor(i,k)) || (semi_linked && is_connected(t,i,k))) && (is_free(t,i) && (!under_semi_linked || !is_under_semi_linked(t,i,c)) && !already_seen[i] && !connected[i] || end_component[i])){
+                if (((!semi_linked && is_neighbor(i, k)) || (semi_linked && is_connected(t, i, k))) && (is_free(t, i) && (!under_semi_linked || !is_under_semi_linked(t, i, c)) && !already_seen[i] && !connected[i] || end_component[i])) {
                     next[i] = true;
                 }
             }
@@ -624,18 +867,18 @@ public class Hex extends AppCompatActivity {
         return next;
     }
 
-    boolean [] path_intersection(boolean[][][] t, boolean under_semi_linked){
-        boolean previous[][][]= new boolean[2][m*m][m*m];
-        boolean already_seen[] = new boolean[m*m];
-        boolean already_seen2[] = new boolean[m*m];
-        boolean already_seen3[] = new boolean[m*m];
-        boolean path[][] = new boolean[2][m*m];
-        boolean path_intersection[] = new boolean[m*m];
-        boolean path_final[] = new boolean[m*m];
+    boolean[] path_intersection(boolean[][][] t, boolean under_semi_linked) {
+        boolean previous[][][] = new boolean[2][m * m][m * m];
+        boolean already_seen[] = new boolean[m * m];
+        boolean already_seen2[] = new boolean[m * m];
+        boolean already_seen3[] = new boolean[m * m];
+        boolean path[][] = new boolean[2][m * m];
+        boolean path_intersection[] = new boolean[m * m];
+        boolean path_final[] = new boolean[m * m];
         boolean begin_component[];
         boolean end_component[];
         boolean next[];
-        for (int i = 0; i< m*m; i++) {
+        for (int i = 0; i < m * m; i++) {
             for (int j = 0; j < m * m; j++) {
                 previous[0][i][j] = false;
                 previous[1][i][j] = false;
@@ -649,24 +892,23 @@ public class Hex extends AppCompatActivity {
         ArrayList q1;
         ArrayList q2;
         ArrayList q3;
-        for (int c = 0; c<2; c++){
-            for (int i = 0; i< m*m; i++) {
+        for (int c = 0; c < 2; c++) {
+            for (int i = 0; i < m * m; i++) {
                 already_seen[i] = false;
                 already_seen2[i] = false;
                 already_seen3[i] = false;
             }
-            if (c == 0){
-                begin_component = component(t, 1,c);
-                end_component = component(t, m*m - 2, c);
-            }
-            else{
-                begin_component = component(t, m,c);
-                end_component = component(t, m*m - m - 1, c);
+            if (c == 0) {
+                begin_component = component(t, 1, c);
+                end_component = component(t, m * m - 2, c);
+            } else {
+                begin_component = component(t, m, c);
+                end_component = component(t, m * m - m - 1, c);
             }
             q1 = new ArrayList<>();
             q3 = new ArrayList<>();
             fin = false;
-            for (int i= 0; i< m*m; i++) {
+            for (int i = 0; i < m * m; i++) {
                 if (begin_component[i]) {
                     q1.add(i);
                     already_seen[i] = true;
@@ -677,19 +919,19 @@ public class Hex extends AppCompatActivity {
                     }
                 }
             }
-            while (!fin){
-                q2 =new ArrayList<>();
-                while (!q1.isEmpty()){
+            while (!fin) {
+                q2 = new ArrayList<>();
+                while (!q1.isEmpty()) {
                     k = (int) q1.remove(0);
-                    next= next(t, k,c, already_seen,end_component,false, under_semi_linked /*&& c == 1 - color*/);
-                    for (int i = 0; i<m*m; i++){
-                        if (next[i]){
-                            if (end_component[i]&& !already_seen3[i]){
-                                fin =true;
+                    next = next(t, k, c, already_seen, end_component, false, under_semi_linked /*&& c == 1 - color*/);
+                    for (int i = 0; i < m * m; i++) {
+                        if (next[i]) {
+                            if (end_component[i] && !already_seen3[i]) {
+                                fin = true;
                                 q3.add(i);
                                 already_seen3[i] = true;
                             }
-                            if (!already_seen2[i]){
+                            if (!already_seen2[i]) {
                                 q2.add(i);
                                 already_seen2[i] = true;
                             }
@@ -697,87 +939,83 @@ public class Hex extends AppCompatActivity {
                         }
                     }
                 }
-                for (int i = 0; i< m*m; i++)
+                for (int i = 0; i < m * m; i++)
                     already_seen[i] = already_seen2[i];
                 q1 = q2;
-                if (q1.isEmpty()){
+                if (q1.isEmpty()) {
                     return path_intersection(t, false);
                 }
             }
-            while (!q3.isEmpty()){
+            while (!q3.isEmpty()) {
                 k = (int) q3.remove(0);
                 path[c][k] = true;
-                for (int i =0; i<m*m; i++){
-                    if (previous[c][k][i] && !already_seen3[i]){
+                for (int i = 0; i < m * m; i++) {
+                    if (previous[c][k][i] && !already_seen3[i]) {
                         q3.add(i);
                         already_seen3[i] = true;
                     }
                 }
             }
         }
-        for (int i = 0; i< m*m; i++){
+        for (int i = 0; i < m * m; i++) {
             path_intersection[i] = path[0][i] && path[1][i];
             path_final[i] = path_intersection[i];
         }
-        for (int i = 0; i< m*m; i++){
+        for (int i = 0; i < m * m; i++) {
             if (path_intersection[i])
-            for (int j = 0; j < m*m; j++){
-                if (!path_intersection[j] && is_neighbor(i,j))
-                    path_final[j] = true;
-            }
+                for (int j = 0; j < m * m; j++) {
+                    if (!path_intersection[j] && is_neighbor(i, j))
+                        path_final[j] = true;
+                }
         }
         return path_intersection;
 
     }
 
 
-    int path_length(int color, int c, int n, boolean under_semi_linked){
-        if (!is_free(tab_color,n))
-            return m*m;
-        tab_color[color][n/m][n%m] = true;
-        empties.remove(n);
-        boolean already_seen[] = new boolean[m*m];
+    int path_length(int color, int c, int n, boolean under_semi_linked) {
+        if (!is_free(plateau.tab_color, n))
+            return m * m;
+        plateau.doMove(new HexMove(color, n / m, n % m));
+        boolean already_seen[] = new boolean[m * m];
         boolean next[];
         boolean begin_component[];
         boolean end_component[];
-        for (int i = 0; i<m*m; i++){
+        for (int i = 0; i < m * m; i++) {
             already_seen[i] = false;
         }
         ArrayList q1 = new ArrayList<>();
         ArrayList q2;
-        if (c == 0){
-            begin_component = component(tab_color, 1,c);
-            end_component = component(tab_color, m*m - 2, c);
+        if (c == 0) {
+            begin_component = component(plateau.tab_color, 1, c);
+            end_component = component(plateau.tab_color, m * m - 2, c);
+        } else {
+            begin_component = component(plateau.tab_color, m, c);
+            end_component = component(plateau.tab_color, m * m - m - 1, c);
         }
-        else{
-            begin_component = component(tab_color, m,c);
-            end_component = component(tab_color, m*m - m - 1, c);
-        }
-        for (int i = 0; i < m*m; i++){
-            if (begin_component[i]){
+        for (int i = 0; i < m * m; i++) {
+            if (begin_component[i]) {
                 q1.add(i);
                 already_seen[i] = true;
-                if (end_component[i]){
-                    tab_color[color][n/m][n%m] = false;
-                    empties.add(n);
+                if (end_component[i]) {
+                    plateau.undoMove(new HexMove(color, n / m, n % m));
                     return 0;
                 }
             }
         }
         int l;
         int k;
-        for (l = 0; true ; l++) {
+        for (l = 0; true; l++) {
             q2 = new ArrayList<>();
             while (!q1.isEmpty()) {
                 k = (int) q1.remove(0);
-                next = next(tab_color, k, c, already_seen, end_component, true, under_semi_linked);
+                next = next(plateau.tab_color, k, c, already_seen, end_component, true, under_semi_linked);
                 for (int i = 0; i < m * m; i++) {
                     if (next[i] && !already_seen[i]) {
                         q2.add(i);
                         already_seen[i] = true;
                         if (end_component[i]) {
-                            tab_color[color][n/m][n%m] = false;
-                            empties.add(n);
+                            plateau.undoMove(new HexMove(color, n / m, n % m));
                             return l;
                         }
                     }
@@ -785,39 +1023,48 @@ public class Hex extends AppCompatActivity {
 
             }
             q1 = q2;
-            if (q1.isEmpty()){
-                tab_color[color][n/m][n%m] = false;
-                empties.add(n);
-                return m*m;
+            if (q1.isEmpty()) {
+                plateau.undoMove(new HexMove(color, n / m, n % m));
+                return m * m;
             }
         }
     }
 
-    int weight_path(int n){
-        return  path_length(color,1-color, n, true) - path_length(1 - color,1-color, n, true) - path_length(color, color,n,true);
-    }
-    int weight_connected(int n){
-        return compute_weight(n,color, true) + compute_weight(n, 1 - color, true);
+    int weight_path(int n) {
+        return path_length(color, 1 - color, n, true) - path_length(1 - color, 1 - color, n, true) - path_length(color, color, n, true);
     }
 
-    int [] weight_path(){
-        int [] weight = new int[m * m];
-        for (int i = 0; i < m * m; i++){
-            if (is_free(tab_color,i))
+    int weight_connected(int n) {
+        return compute_weight(n, color, true) + compute_weight(n, 1 - color, true);
+    }
+
+    int[] weight_path() {
+        int[] weight = new int[m * m];
+        for (int i = 0; i < m * m; i++) {
+            if (is_free(plateau.tab_color, i))
                 weight[i] = weight_path(i);
             else
-                weight[i] = - m * m;
+                weight[i] = -m * m;
         }
-        return  weight;
+        return weight;
     }
 
-    HexMove MCTS_move(){
-        //print_tab(tab, m);
-        //return 1;
-        return (HexMove) this.root.getBestMove(4000, false, 0);
+    HexMove MCTS_move() {
+        HexMove move = (HexMove) this.root.getBestMove(plateau, 4000, 10, false, 0);
+        /*
+        final MCTS root = this.root;
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), "" + root.n, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+         */
+        return move;
     }
 
-    int move_computer(boolean[][][] t){
+    int move_computer(boolean[][][] t) {
         boolean path_intersection[] = path_intersection(t, true);
         int best_move[] = new int[m * m];
         int length = 0;
@@ -839,7 +1086,7 @@ public class Hex extends AppCompatActivity {
          */
 
         for (int i = 0; i < m * m; i++) {
-            if (is_free(t,i) && path_intersection[i]) {
+            if (is_free(t, i) && path_intersection[i]) {
                 best_move[length++] = i;
             }
         }
@@ -848,27 +1095,39 @@ public class Hex extends AppCompatActivity {
     }
 
 
-    synchronized boolean can_play(int p){
-        if (play && !fin && is_free(tab_color,p) ){
+    synchronized boolean can_play(int p) {
+        if (play && !fin && is_free(plateau.tab_color, p)) {
             play = false;
             return true;
         }
         return false;
     }
 
-    void play_computer(){
-        //int move= move_computer();
-        HexMove move = MCTS_move();
-        updateTree(move);
-        //Toast.makeText(getApplicationContext(), "" + move, Toast.LENGTH_SHORT).show();
-        Button b=findViewById(tab_button[move.x][move.y]);
+    void play_computer() {
+        final HexMove[] move = new HexMove[1];
+        thread = new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                move[0] = MCTS_move();
+            }
+        };
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        updateTree(move[0]);
+        plateau.doMove(move[0]);
+        Button b = findViewById(tab_button[move[0].x][move[0].y]);
         final ObjectAnimator objectAnimator;
         s = new AnimatorSet();
-        if (color == 0)
-        {
+        if (color == 0) {
             objectAnimator = ObjectAnimator.ofObject(b, "backgroundResource", new ArgbEvaluator(), R.drawable.red_hexagon, R.drawable.red_hexagon);
-        }
-        else{
+        } else {
             objectAnimator = ObjectAnimator.ofObject(b, "backgroundResource", new ArgbEvaluator(), R.drawable.blue_hexagon, R.drawable.blue_hexagon);
         }
         objectAnimator.setDuration(100);
@@ -884,8 +1143,8 @@ public class Hex extends AppCompatActivity {
                     play_computer();
             }
         });
-        tab_color[color][move.x][move.y] = true;
-        empties.remove(move);
+        //plateau.tab_color[color][move.x][move.y] = true;
+        //empties.remove(move);
         s.play(objectAnimator);
         s.start();
     }
@@ -896,7 +1155,9 @@ public class Hex extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (can_play(i*m+j)){
-                    updateTree(new HexMove(i,j));
+                    HexMove move = new HexMove(color, i, j);
+                    updateTree(move);
+                    plateau.doMove(move);
                     final ObjectAnimator objectAnimator;
                     s = new AnimatorSet();
                     if (color == 0)
@@ -920,8 +1181,8 @@ public class Hex extends AppCompatActivity {
                                 play = true;
                         }
                     });
-                    tab_color[color][i][j] = true ;
-                    empties.remove(i * m + j);
+                    //plateau.tab_color[color][i][j] = true ;
+                    //empties.remove(i * m + j);
                     s.play(objectAnimator);
                     s.start();
                 }
@@ -933,45 +1194,15 @@ public class Hex extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_hex);
-        this.background = findViewById(R.id.background);
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int navigationBarHeight = 0;
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            navigationBarHeight = getResources().getDimensionPixelSize(resourceId);
-        }
-        int statusBarHeight = 0;
-        resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            statusBarHeight = getResources().getDimensionPixelSize(resourceId);
-        }
-        int titleBarHeight = 0;
-        resourceId = getResources().getIdentifier("title_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            titleBarHeight = getResources().getDimensionPixelSize(resourceId);
-        }
-        double width = metrics.widthPixels;
-        double height = metrics.heightPixels - titleBarHeight - navigationBarHeight - statusBarHeight;
-        w = ((3 * m + 1) / 2);
-        h = ((3 * m - 3) * Math.sqrt(3)) / 2;
-        if (h * width < w * height){
-            w = ((4 * width) / (3 * m + 1));
-            h = (int) ((w * Math.sqrt(3)) / 2);
-            w = (int) w;
-        }
-        else{
-            h = ((2 * height) / (3 * m - 3));
-            w = (int) ((2 * h) / Math.sqrt(3));
-            h = (int) h;
-        }
-        dx = (int) (4 * width - ((3 * m + 1) * w)) / 8;
-        dy = (int) (2 * height - ((3 * m - 3) * h)) / 4;
-        create_hex();
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                s.pause();
+                if (thread != null) {
+                    thread.interrupt();
+                }
                 Intent main = new Intent(getApplicationContext(),MainActivity.class);
                 startActivity(main);
                 finish();
@@ -986,6 +1217,7 @@ public class Hex extends AppCompatActivity {
         });
         this.player = (Spinner) findViewById(R.id.player);
 
+        create_hex();
         ArrayAdapter<String> spinnerArrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, players);
         player.setAdapter(spinnerArrayAdapter);
         player.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -1003,5 +1235,43 @@ public class Hex extends AppCompatActivity {
         for (int i=1; i<m-1; i++)
             for (int j=1; j<m-1; j++)
                 play(i,j);
+
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        double height = findViewById(android.R.id.content).getHeight();
+        double width = metrics.widthPixels;
+        w = ((3 * m + 1) / 2);
+        h = ((3 * m - 3) * Math.sqrt(3)) / 2;
+        if (h * width < w * height){
+            w = ((4 * width) / (3 * m + 1));
+            h = (int) ((w * Math.sqrt(3)) / 2);
+            w = (int) w;
+        }
+        else{
+            h = ((2 * height) / (3 * m - 3));
+            w = (int) ((2 * h) / Math.sqrt(3));
+            h = (int) h;
+        }
+        dx = (int) (4 * width - ((3 * m + 1) * w)) / 8;
+        dy = (int) (2 * height - ((3 * m - 3) * h)) / 4;
+        Button b;
+        for (int i=0; i < m; i++)
+            for (int j=0; j<m; j++){
+                if ((i!=0 || j!=0) && (i!=0 || j!=m-1) && (i!=m-1 || j!=0) && (i!=m-1 || j!=m-1)) {
+                    b = findViewById(tab_button[i][j]);
+                    b.setMinimumHeight(0);
+                    b.setMinimumWidth(0);
+                    b.setHeight((int) h);
+                    b.setWidth((int) w);
+                    b.setX((int) (dx + (3 * j * w) / 4));
+                    b.setY((int) (dy + h * i + (h * (m - 2 - j)) / 2));
+                }
+            }
+
     }
 }

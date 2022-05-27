@@ -145,6 +145,16 @@
                 android:alpha="0.9"
                 android:textColor="@color/white"  />
             <Button
+                android:id="@+id/mastermind"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:layout_marginBottom="1dp"
+                android:text="Mastermind"
+                android:background="@drawable/mainbutton"
+                android:alpha="0.9"
+                android:textColor="@color/white"  />
+            <Button
                 android:id="@+id/puissance_4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private Button solitaire;
     private Button freecell;
     private Button dames;
+    private Button mastermind;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
         alea.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int i=(int)(Math.random()*14);
+                int i=(int)(Math.random()*15);
                 if (i == 0) {
                     Intent pow = new Intent(getApplicationContext(), Pow_2.class);
                     startActivity(pow);
@@ -110,7 +111,11 @@ public class MainActivity extends AppCompatActivity {
                     Intent dam= new Intent(getApplicationContext(),Dames.class);
                     startActivity(dam);
                     finish();
-
+                }
+                if (i == 15){
+                    Intent mas= new Intent(getApplicationContext(),Mastermind.class);
+                    startActivity(mas);
+                    finish();
                 }
             }
         });
@@ -254,6 +259,16 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent dam= new Intent(getApplicationContext(),Dames.class);
                 startActivity(dam);
+                finish();
+            }
+        });
+
+        this.mastermind = findViewById(R.id.mastermind);
+        mastermind.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent mas= new Intent(getApplicationContext(),Mastermind.class);
+                startActivity(mas);
                 finish();
             }
         });

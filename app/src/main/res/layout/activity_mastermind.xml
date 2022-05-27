@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/parent"
+    tools:context=".Mastermind">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/jeudelavie_background"
+        android:clickable="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <Button
+        android:id="@+id/main"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Retour"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/new_"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rejouer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <GridLayout
+        android:id="@+id/grille"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:columnCount="6"
+        android:rowCount="11"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:background="@drawable/mastermind"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/main"
+        app:layout_constraintBottom_toTopOf="@id/color1"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/color1"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/bluebutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/color2"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+    <Button
+        android:id="@+id/color2"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/redbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/color1"
+        app:layout_constraintEnd_toStartOf="@id/color3"
+        app:layout_constraintBottom_toBottomOf="parent" />
+    <Button
+        android:id="@+id/color3"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/yellowbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/color2"
+        app:layout_constraintEnd_toStartOf="@id/color4"
+        app:layout_constraintBottom_toBottomOf="parent" />
+    <Button
+        android:id="@+id/color4"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/greenbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/color3"
+        app:layout_constraintEnd_toStartOf="@id/color5"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+    <Button
+        android:id="@+id/color5"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/brownbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/color4"
+        app:layout_constraintEnd_toStartOf="@id/color6"
+        app:layout_constraintBottom_toBottomOf="parent" />
+    <Button
+        android:id="@+id/color6"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/pinkbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/color5"
+        app:layout_constraintEnd_toStartOf="@id/color7"
+        app:layout_constraintBottom_toBottomOf="parent" />
+    <Button
+        android:id="@+id/color7"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/violetbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/color6"
+        app:layout_constraintEnd_toStartOf="@id/color8"
+        app:layout_constraintBottom_toBottomOf="parent" />
+    <Button
+        android:id="@+id/color8"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:layout_margin="10px"
+        android:background="@drawable/orangebutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/color7"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

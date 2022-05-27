@@ -36,50 +36,432 @@ public class Dames extends AppCompatActivity {
     private int taille = 10;
     private Table tab_board;
     private Table tab_piece;
-    private Piece[][] value = new Piece[taille][taille];
+    private PlateauDames plateau;
     private int width;
     private ArrayList<Pair<Integer, Integer>> possibleMoves = new ArrayList<>();
-    private boolean color = false;
+    private int color = 0;
     private ArrayList<Pair<Integer, Integer>> currentMove = new ArrayList<>();
-    private ArrayList<DamesMove> moves = new ArrayList<>();
+    private ArrayList<PlateauDames.DamesMove> moves = new ArrayList<>();
     private boolean canMove = true;
     private int maxDepthAlphaBeta = 8;
     private int nbPlayer = 1;
     private AnimatorSet s = new AnimatorSet();
     private MCTS root;
 
-    public class Piece{
-        private boolean color;
-        private int i;
-        private int j;
-        private Button piece;
-        private boolean Dame;
 
-        Piece(boolean color, int i, int j){
-            this.color = color;
-            this.i = i;
-            this.j = j;
-            this.piece = tab_piece.getButton(i,j);
-            if (this.color){
-                this.piece.setBackgroundResource(R.drawable.blackbutton);
+
+
+
+    boolean AreEqual(Pair<Integer, Integer> p1, Pair<Integer, Integer> p2){
+        return p1.first == p2.first && p1.second == p2.second;
+    }
+
+    private class PlateauDames extends Plateau{
+
+        Piece[][] value = new Piece[taille][taille];
+
+        PlateauDames(){
+            for (int i=0; i<taille;i++) {
+                for (int j = 0; j < taille; j++) {
+                    value[i][j] = null;
+                    if((i+j)%2==1){
+                        if (i < taille / 2 - 1) {
+                            value[i][j] = new Piece(1);
+                            tab_piece.getButton(i,j).setBackgroundResource(R.drawable.blackbutton);
+                        }
+                        else if (i > taille / 2){
+                            value[i][j] = new Piece(0);
+                            tab_piece.getButton(i,j).setBackgroundResource(R.drawable.beigebutton);
+                        }
+                    }
+                }
             }
-            else{
-                this.piece.setBackgroundResource(R.drawable.beigebutton);
-            }
-            value[i][j] = this;
-            this.Dame = false;
         }
 
-        private void addeatMoves(ArrayList<DamesMove> moves, DamesMove currentMove, int i, int j, int direction){
+        PlateauDames(PlateauDames plateauDames){
+            this.value = new Piece[taille][taille];
+            for (int i = 0; i < taille; i++){
+                for (int j = 0; j < taille; j++){
+                    if (plateauDames.value[i][j] == null) {
+                        this.value[i][j] = null;
+                    }
+                    else{
+                        this.value[i][j] = new Piece(plateauDames.value[i][j]);
+                    }
+                }
+            }
+        }
+
+        public class Piece{
+            private int color;
+            private boolean Dame;
+
+
+
+            Piece(int color){
+                this.color = color;
+                this.Dame = false;
+            }
+
+            Piece(Piece piece){
+                this.color = piece.color;
+                this.Dame = piece.Dame;
+            }
+
+
+
+            private void addeatMoves(ArrayList<DamesMove> moves, DamesMove currentMove, int i, int j, int direction){
+                boolean end = true;
+                if (!Dame) {
+                    if (direction == 1) {
+                        if (i < taille - 2) {
+                            if (j < taille - 2) {
+                                if (value[i + 2][j + 2] == null && value[i + 1][j + 1] != null && value[i + 1][j + 1].getColor() != this.color && !contains(currentMove.eatenPieces, new Pair(i + 1,j + 1))) {
+                                    currentMove.positions.add(new Pair(i + 2, j + 2));
+                                    currentMove.eatenPieces.add(new Pair(i + 1,j + 1));
+                                    addeatMoves(moves, currentMove.copy(), i + 2, j + 2, direction);
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                    currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
+                                    end = false;
+
+                                }
+                            }
+                            if (j > 1) {
+                                if (value[i + 2][j - 2] == null && value[i + 1][j - 1] != null && value[i + 1][j - 1].getColor() != this.color && !contains(currentMove.eatenPieces, new Pair(i + 1,j - 1))) {
+                                    currentMove.positions.add(new Pair(i + 2, j - 2));
+                                    currentMove.eatenPieces.add(new Pair(i + 1,j - 1));
+                                    addeatMoves(moves, currentMove.copy(), i + 2, j - 2, direction);
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                    currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
+                                    end = false;
+                                }
+                            }
+                        }
+                        if (i > 1) {
+                            if (j < taille - 2) {
+                                if (value[i - 2][j + 2] == null && value[i - 1][j + 1] != null && value[i - 1][j + 1].getColor() != this.color && !contains(currentMove.eatenPieces, new Pair(i - 1,j + 1))) {
+                                    currentMove.positions.add(new Pair(i - 2, j + 2));
+                                    currentMove.eatenPieces.add(new Pair(i - 1,j + 1));
+                                    addeatMoves(moves, currentMove.copy(), i - 2, j + 2, direction);
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                    currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
+                                    end = false;
+
+                                }
+                            }
+                            if (j > 1) {
+                                if (value[i - 2][j - 2] == null && value[i - 1][j - 1] != null && value[i - 1][j - 1].getColor() != this.color && !contains(currentMove.eatenPieces, new Pair(i - 1,j - 1))) {
+                                    currentMove.positions.add(new Pair(i - 2, j - 2));
+                                    currentMove.eatenPieces.add(new Pair(i - 1,j - 1));
+                                    addeatMoves(moves, currentMove.copy(), i - 2, j - 2, direction);
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                    currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
+                                    end = false;
+                                }
+                            }
+
+                        }
+                    }
+                }
+                else{
+                    for (int x = -1; x < 2;  x = x + 2){
+                        for (int y = -1; y < 2; y = y + 2){
+                            if (x * y == direction) {
+                                int k = 1;
+                                int eaten = 0;
+                                while (i + x * k >= 0 && i + x * k < taille && j + y * k >= 0 && j + y * k < taille) {
+                                    if (value[i + x * k][j + y * k] != null && value[i + x * k][j + y * k].getColor() != color) {
+                                        if (i + x * (k + 1) >= 0 && i + x * (k + 1) < taille && j + y * (k + 1) >= 0 && j + y * (k + 1) < taille && value[i + x * (k + 1)][j + y * (k + 1)] == null && !contains(currentMove.eatenPieces, new Pair(i + x * k,j + y * k))) {
+                                            currentMove.eatenPieces.add(new Pair(i + x * k,j + y * k));
+                                            eaten++;
+                                        } else {
+                                            break;
+                                        }
+                                    } else if (value[i + x * k][j + y * k] == null) {
+                                        currentMove.positions.add(new Pair(i + x * k, j + y * k));
+                                        if (eaten > 0) {
+                                            addeatMoves(moves, currentMove.copy(), i + x * k, j + y * k, -x * y);
+                                            end = false;
+                                        }
+                                        currentMove.positions.remove(currentMove.positions.size() - 1);
+                                    }
+                                    else{
+                                        break;
+                                    }
+                                    k++;
+                                }
+                                while (eaten > 0) {
+                                    currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
+                                    eaten--;
+                                }
+                            }
+                        }
+                    }
+
+                }
+                if (end && currentMove.positions.size() > 1) {
+                    if (!Dame) {
+                        moves.add(currentMove.copy());
+                    } else {
+                        boolean add = true;
+                        Pair<Integer, Integer> coordinate = currentMove.positions.get(currentMove.positions.size() - 1);
+                        for (int x = -1; add && x < 2; x = x + 2) {
+                            for (int y = -1; add && y < 2; y = y + 2) {
+                                if (coordinate.first + 2 * x >= 0 && coordinate.first + 2 * x < taille && coordinate.second + 2 * y >= 0 && coordinate.second+ 2 * y < taille){
+                                    if (value[coordinate.first + x][coordinate.second + y] != null && value[coordinate.first + x][coordinate.second + y].getColor() != color && value[coordinate.first + 2 * x][coordinate.second + 2 * y] == null && !contains(currentMove.eatenPieces, new Pair(coordinate.first + x,coordinate.second + y))){
+                                        add = false;
+                                    }
+                                }
+                            }
+                        }
+                        if (add){
+                            moves.add(currentMove.copy());
+                        }
+                    }
+                }
+            }
+
+            ArrayList<DamesMove> getMoves(int i, int j){
+                ArrayList<DamesMove> moves = new ArrayList<>();
+                DamesMove currentMove = new DamesMove(this.color);
+                currentMove.positions.add(new Pair(i,j));
+                addeatMoves(moves, currentMove, i, j, 1);
+                addeatMoves(moves, currentMove, i, j, -1);
+                if (!Dame) {
+                    if (this.color == 1) {
+                        if (i < taille - 1) {
+                            if (j < taille - 1) {
+                                if (value[i + 1][j + 1] == null) {
+                                    currentMove.positions.add(new Pair(i + 1, j + 1));
+                                    moves.add(currentMove.copy());
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                }
+                            }
+                            if (j > 0) {
+                                if (value[i + 1][j - 1] == null) {
+                                    currentMove.positions.add(new Pair(i + 1, j - 1));
+                                    moves.add(currentMove.copy());
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                }
+                            }
+                        }
+                    } else {
+                        if (i > 0) {
+                            if (j < taille - 1) {
+                                if (value[i - 1][j + 1] == null) {
+                                    currentMove.positions.add(new Pair(i - 1, j + 1));
+                                    moves.add(currentMove.copy());
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                }
+                            }
+                            if (j > 0) {
+                                if (value[i - 1][j - 1] == null) {
+                                    currentMove.positions.add(new Pair(i - 1, j - 1));
+                                    moves.add(currentMove.copy());
+                                    currentMove.positions.remove(currentMove.positions.size() - 1);
+                                }
+                            }
+                        }
+                    }
+                }
+                else{
+                    for (int x = -1; x < 2;  x = x + 2){
+                        for (int y = -1; y < 2; y = y + 2){
+                            int k = 1;
+                            while (i + x * k >= 0 && i + x * k < taille && j + y * k >= 0 && j + y * k < taille && value[i + x * k][j + y * k] == null){
+                                currentMove.positions.add(new Pair(i + x * k, j + y * k ));
+                                moves.add(currentMove.copy());
+                                currentMove.positions.remove(currentMove.positions.size() - 1);
+                                k++;
+                            }
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            ArrayList<DamesMove> getLegalMoves(int i, int j){
+                ArrayList<DamesMove> moves = this.getMoves(i,j);
+                if (mustEat(this.color)){
+                    while(!moves.isEmpty() && moves.get(moves.size() - 1).eatenPieces.isEmpty()){
+                        moves.remove(moves.size() - 1);
+                    }
+                }
+                return moves;
+            }
+
+            int getColor(){
+                return this.color;
+            }
+
+            int getValue(){
+                if (this.color == 1){
+                    if (Dame){
+                        return -5;
+                    }
+                    else{
+                        return -1;
+                    }
+                }
+                else{
+                    if (Dame){
+                        return 5;
+                    }
+                    else{
+                        return 1;
+                    }
+                }
+            }
+        }
+
+        public class DamesMove extends Move{
+            ArrayList<Pair<Integer, Integer>> positions = new ArrayList<>();
+            ArrayList<Pair<Integer, Integer>> eatenPieces = new ArrayList<>();
+            boolean newDame = false;
+
+            public DamesMove(int color) {
+                super(color);
+            }
+
+            DamesMove copy(){
+                DamesMove move = new DamesMove(this.color);
+                move.positions = new ArrayList<>();
+                for (Pair<Integer, Integer> pair : this.positions){
+                    move.positions.add(new Pair<>(pair.first, pair.second));
+                }
+                move.eatenPieces = new ArrayList<>();
+                for (Pair<Integer, Integer> pair : this.eatenPieces){
+                    move.eatenPieces.add(new Pair<>(pair.first, pair.second));
+                }
+                move.newDame = this.newDame;
+                return move;
+            }
+
+            boolean isEqual(DamesMove move){
+                if (this.positions.size() != move.positions.size()){
+                    return false;
+                }
+                for (int i = 0; i < this.positions.size(); i++){
+                    if (!AreEqual(this.positions.get(i), move.positions.get(i))){
+                        return false;
+                    }
+
+                }
+                return true;
+            }
+
+        }
+
+        @Override
+        void doMove(Move move) {
+            DamesMove damesMove = (DamesMove) move;
+            int color = damesMove.getColor();
+            for (Pair<Integer, Integer> pair : damesMove.eatenPieces){
+                value[pair.first][pair.second] = null;
+            }
+            Pair<Integer, Integer> start = damesMove.positions.get(0);
+            Pair<Integer, Integer> end = damesMove.positions.get(damesMove.positions.size() - 1);
+            if (start.first != end.first || start.second != end.second) {
+                value[end.first][end.second] = value[start.first][start.second];
+                value[start.first][start.second] = null;
+            }
+            if ((color == 0 && end.first == 0 || color == 1 && end.first == taille - 1) && !value[end.first][end.second].Dame){
+                damesMove.newDame = true;
+            }
+            if (damesMove.newDame){
+                value[end.first][end.second].Dame = true;
+            }
+        }
+
+        @Override
+        void undoMove(Move move) {
+            DamesMove damesMove = (DamesMove) move;
+            int color = damesMove.getColor();
+            Pair<Integer, Integer> start = damesMove.positions.get(0);
+            Pair<Integer, Integer> end = damesMove.positions.get(damesMove.positions.size() - 1);
+            if (start.first != end.first || start.second != end.second) {
+                value[start.first][start.second] = value[end.first][end.second];
+                value[end.first][end.second] = null;
+            }
+            if (damesMove.newDame){
+                value[start.first][start.second].Dame = false;
+            }
+            for (Pair<Integer, Integer> pair : damesMove.eatenPieces){
+                value[pair.first][pair.second] = new Piece(1 - color);
+            }
+        }
+
+        @Override
+        Plateau copy() {
+            return new PlateauDames(this);
+        }
+        @Override
+        int getWinner(int color) {
+            if (value() > 0){
+                return 0;
+            }
+            else if (value() < 1){
+                return 1;
+            }
+            return -1;
+        }
+
+        @Override
+        boolean isGameOver(int color) {
+            return getLegalMoves(color).isEmpty();
+        }
+
+        @Override
+        ArrayList<Move> getLegalMoves(int color) {
+            ArrayList<Move> moves = new ArrayList<>();
+            boolean mustEat = false;
+            for (int i = 0; i < taille; i++){
+                for (int j = 0; j < taille; j++){
+                    if (value[i][j] != null && ((value[i][j].getValue() > 0 && color == 0) || (value[i][j].getValue() < 0 && color == 1))){
+                        ArrayList<DamesMove> pieceMoves = getMoves(color, i, j);
+                        if (!pieceMoves.isEmpty() && !pieceMoves.get(0).eatenPieces.isEmpty()){
+                            mustEat = true;
+                            moves.clear();
+                        }
+                        if (!mustEat){
+                            moves.addAll(pieceMoves);
+                        }
+                        else{
+                            int ind = 0;
+                            while (ind < pieceMoves.size() && !pieceMoves.get(ind).eatenPieces.isEmpty()){
+                                moves.add(pieceMoves.get(ind));
+                                ind++;
+                            }
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        boolean mustEat(int color){
+            for (int i = 0; i < taille; i++){
+                for (int j = 0; j < taille; j++){
+                    if (value[i][j] != null && value[i][j].getColor() == color){
+                        ArrayList<DamesMove> moves = value[i][j].getMoves(i,j);
+                        if (!moves.isEmpty() && !moves.get(0).eatenPieces.isEmpty()){
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        private void addeatMoves(ArrayList<DamesMove> moves, DamesMove currentMove, int color, int i, int j, int direction, boolean Dame){
             boolean end = true;
             if (!Dame) {
                 if (direction == 1) {
                     if (i < taille - 2) {
                         if (j < taille - 2) {
-                            if (value[i + 2][j + 2] == null && value[i + 1][j + 1] != null && value[i + 1][j + 1].getColor() != this.color && !contains(currentMove.eatenPieces, value[i + 1][j + 1])) {
+                            if (value[i + 2][j + 2] == null && value[i + 1][j + 1] != null && ((value[i + 1][j + 1].getValue() > 0 && color == 1) || (value[i + 1][j + 1].getValue() < 0 && color == 0)) && !contains(currentMove.eatenPieces, new Pair(i + 1,j + 1))) {
                                 currentMove.positions.add(new Pair(i + 2, j + 2));
-                                currentMove.eatenPieces.add(value[i + 1][j + 1]);
-                                addeatMoves(moves, currentMove.copy(), i + 2, j + 2, direction);
+                                currentMove.eatenPieces.add(new Pair(i + 1,j + 1));
+                                addeatMoves(moves, currentMove, color, i + 2, j + 2, direction, Dame);
                                 currentMove.positions.remove(currentMove.positions.size() - 1);
                                 currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
                                 end = false;
@@ -87,10 +469,10 @@ public class Dames extends AppCompatActivity {
                             }
                         }
                         if (j > 1) {
-                            if (value[i + 2][j - 2] == null && value[i + 1][j - 1] != null && value[i + 1][j - 1].getColor() != this.color && !contains(currentMove.eatenPieces, value[i + 1][j - 1])) {
+                            if (value[i + 2][j - 2] == null && value[i + 1][j - 1] != null && ((value[i + 1][j - 1].getValue() > 0 && color == 1) || (value[i + 1][j - 1].getValue() < 0 && color == 0)) && !contains(currentMove.eatenPieces, new Pair(i + 1,j - 1))) {
                                 currentMove.positions.add(new Pair(i + 2, j - 2));
-                                currentMove.eatenPieces.add(value[i + 1][j - 1]);
-                                addeatMoves(moves, currentMove.copy(), i + 2, j - 2, direction);
+                                currentMove.eatenPieces.add(new Pair(i + 1,j - 1));
+                                addeatMoves(moves, currentMove, color, i + 2, j - 2, direction, Dame);
                                 currentMove.positions.remove(currentMove.positions.size() - 1);
                                 currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
                                 end = false;
@@ -99,10 +481,10 @@ public class Dames extends AppCompatActivity {
                     }
                     if (i > 1) {
                         if (j < taille - 2) {
-                            if (value[i - 2][j + 2] == null && value[i - 1][j + 1] != null && value[i - 1][j + 1].getColor() != this.color && !contains(currentMove.eatenPieces, value[i - 1][j + 1])) {
+                            if (value[i - 2][j + 2] == null && value[i - 1][j + 1] != null && ((value[i - 1][j + 1].getValue() > 0 && color == 1) || (value[i - 1][j + 1].getValue() < 0 && color == 0)) && !contains(currentMove.eatenPieces, new Pair(i - 1,j + 1))) {
                                 currentMove.positions.add(new Pair(i - 2, j + 2));
-                                currentMove.eatenPieces.add(value[i - 1][j + 1]);
-                                addeatMoves(moves, currentMove.copy(), i - 2, j + 2, direction);
+                                currentMove.eatenPieces.add(new Pair(i - 1,j + 1));
+                                addeatMoves(moves, currentMove, color, i - 2, j + 2, direction, Dame);
                                 currentMove.positions.remove(currentMove.positions.size() - 1);
                                 currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
                                 end = false;
@@ -110,10 +492,10 @@ public class Dames extends AppCompatActivity {
                             }
                         }
                         if (j > 1) {
-                            if (value[i - 2][j - 2] == null && value[i - 1][j - 1] != null && value[i - 1][j - 1].getColor() != this.color && !contains(currentMove.eatenPieces, value[i - 1][j - 1])) {
+                            if (value[i - 2][j - 2] == null && value[i - 1][j - 1] != null && ((value[i - 1][j - 1].getValue() > 0 && color == 1) || (value[i - 1][j - 1].getValue() < 0 && color == 0)) && !contains(currentMove.eatenPieces, new Pair(i - 1,j - 1))) {
                                 currentMove.positions.add(new Pair(i - 2, j - 2));
-                                currentMove.eatenPieces.add(value[i - 1][j - 1]);
-                                addeatMoves(moves, currentMove.copy(), i - 2, j - 2, direction);
+                                currentMove.eatenPieces.add(new Pair(i - 1,j - 1));
+                                addeatMoves(moves, currentMove, color, i - 2, j - 2, direction, Dame);
                                 currentMove.positions.remove(currentMove.positions.size() - 1);
                                 currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
                                 end = false;
@@ -130,9 +512,9 @@ public class Dames extends AppCompatActivity {
                             int k = 1;
                             int eaten = 0;
                             while (i + x * k >= 0 && i + x * k < taille && j + y * k >= 0 && j + y * k < taille) {
-                                if (value[i + x * k][j + y * k] != null && value[i + x * k][j + y * k].getColor() != color) {
-                                    if (i + x * (k + 1) >= 0 && i + x * (k + 1) < taille && j + y * (k + 1) >= 0 && j + y * (k + 1) < taille && value[i + x * (k + 1)][j + y * (k + 1)] == null && !contains(currentMove.eatenPieces, value[i + x * k][j + y * k])) {
-                                        currentMove.eatenPieces.add(value[i + x * k][j + y * k]);
+                                if (value[i + x * k][j + y * k] != null && ((value[i + x * k][j + y * k].getValue() > 0 && color == 1) || (value[i + x * k][j + y * k].getValue() < 0 && color == 0))) {
+                                    if (i + x * (k + 1) >= 0 && i + x * (k + 1) < taille && j + y * (k + 1) >= 0 && j + y * (k + 1) < taille && value[i + x * (k + 1)][j + y * (k + 1)] == null && !contains(currentMove.eatenPieces, new Pair(i + x * k,j + y * k))) {
+                                        currentMove.eatenPieces.add(new Pair(i + x * k,j + y * k));
                                         eaten++;
                                     } else {
                                         break;
@@ -140,7 +522,7 @@ public class Dames extends AppCompatActivity {
                                 } else if (value[i + x * k][j + y * k] == null) {
                                     currentMove.positions.add(new Pair(i + x * k, j + y * k));
                                     if (eaten > 0) {
-                                        addeatMoves(moves, currentMove.copy(), i + x * k, j + y * k, -x * y);
+                                        addeatMoves(moves, currentMove, color, i + x * k, j + y * k, -direction, Dame);
                                         end = false;
                                     }
                                     currentMove.positions.remove(currentMove.positions.size() - 1);
@@ -149,6 +531,7 @@ public class Dames extends AppCompatActivity {
                                     break;
                                 }
                                 k++;
+
                             }
                             while (eaten > 0) {
                                 currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
@@ -157,9 +540,8 @@ public class Dames extends AppCompatActivity {
                         }
                     }
                 }
-
             }
-            if (end && currentMove.positions.size() > 1) {
+            if (end && currentMove.positions.size() > 1){
                 if (!Dame) {
                     moves.add(currentMove.copy());
                 } else {
@@ -168,7 +550,7 @@ public class Dames extends AppCompatActivity {
                     for (int x = -1; add && x < 2; x = x + 2) {
                         for (int y = -1; add && y < 2; y = y + 2) {
                             if (coordinate.first + 2 * x >= 0 && coordinate.first + 2 * x < taille && coordinate.second + 2 * y >= 0 && coordinate.second+ 2 * y < taille){
-                                if (value[coordinate.first + x][coordinate.second + y] != null && value[coordinate.first + x][coordinate.second + y].getColor() != color && value[coordinate.first + 2 * x][coordinate.second + 2 * y] == null && !contains(currentMove.eatenPieces, value[coordinate.first + x][coordinate.second + y])){
+                                if (value[coordinate.first + x][coordinate.second + y] != null && ((value[coordinate.first + x][coordinate.second + y].getValue() > 0 && color == 1) || (value[coordinate.first + x][coordinate.second + y].getValue() < 0 && color == 0)) && value[coordinate.first + 2 * x][coordinate.second + 2 * y] == null && !contains(currentMove.eatenPieces, new Pair(coordinate.first + x,coordinate.second + y))){
                                     add = false;
                                 }
                             }
@@ -181,14 +563,14 @@ public class Dames extends AppCompatActivity {
             }
         }
 
-        ArrayList<DamesMove> getMoves(){
+        ArrayList<DamesMove> getMoves(int  color, int i, int j){
             ArrayList<DamesMove> moves = new ArrayList<>();
-            DamesMove currentMove = new DamesMove();
+            DamesMove currentMove = new DamesMove(color);
             currentMove.positions.add(new Pair(i,j));
-            addeatMoves(moves, currentMove, i, j, 1);
-            addeatMoves(moves, currentMove, i, j, -1);
-            if (!Dame) {
-                if (this.color) {
+            addeatMoves(moves, currentMove, color, i, j, 1, value[i][j].Dame);
+            addeatMoves(moves, currentMove, color, i, j, -1, value[i][j].Dame);
+            if (!value[i][j].Dame) {
+                if (color == 1) {
                     if (i < taille - 1) {
                         if (j < taille - 1) {
                             if (value[i + 1][j + 1] == null) {
@@ -225,7 +607,7 @@ public class Dames extends AppCompatActivity {
                 }
             }
             else{
-                for (int x = -1; x < 2;  x = x + 2){
+                for (int x = -1; x < 2; x = x + 2){
                     for (int y = -1; y < 2; y = y + 2){
                         int k = 1;
                         while (i + x * k >= 0 && i + x * k < taille && j + y * k >= 0 && j + y * k < taille && value[i + x * k][j + y * k] == null){
@@ -240,124 +622,28 @@ public class Dames extends AppCompatActivity {
             return moves;
         }
 
-        ArrayList<DamesMove> getLegalMoves(){
-            ArrayList<DamesMove> moves = this.getMoves();
-            if (mustEat()){
-                while(!moves.isEmpty() && moves.get(moves.size() - 1).eatenPieces.isEmpty()){
-                    moves.remove(moves.size() - 1);
+        int value(){
+            int v = 0;
+            for (int i = 0; i < taille; i++){
+                for (int j = 0; j < taille; j++){
+                    if (value[i][j] != null)
+                        v += value[i][j].getValue();
                 }
             }
-            return moves;
+            return v;
         }
-
-        boolean getColor(){
-            return this.color;
-        }
-
-        void setCoordinate(int i, int j){
-            this.i = i;
-            this.j = j;
-        }
-
-        int getValue(){
-            if (this.color){
-                if (Dame){
-                    return -5;
-                }
-                else{
-                    return -1;
-                }
-            }
-            else{
-                if (Dame){
-                    return 5;
-                }
-                else{
-                    return 1;
-                }
-            }
-        }
-    }
-
-    private class DamesMove extends Move{
-        ArrayList<Pair<Integer, Integer>> positions = new ArrayList<>();
-        ArrayList<Piece> eatenPieces = new ArrayList<>();
-        boolean newDame = false;
-
-        DamesMove copy(){
-            DamesMove move = new DamesMove();
-            move.positions = (ArrayList<Pair<Integer, Integer>>) this.positions.clone();
-            move.eatenPieces = (ArrayList<Piece>) this.eatenPieces.clone();
-            return move;
-        }
-
-        boolean isEqual(DamesMove move){
-            if (this.positions.size() != move.positions.size()){
-                return false;
-            }
-            for (int i = 0; i < this.positions.size(); i++){
-                if (!AreEqual(this.positions.get(i), move.positions.get(i))){
-                    return false;
-                }
-
-            }
-            return true;
-        }
-
-    }
-
-    boolean AreEqual(Pair<Integer, Integer> p1, Pair<Integer, Integer> p2){
-        return p1.first == p2.first && p1.second == p2.second;
     }
 
     private class MCTS_Dames extends MCTS{
-        Dames dames;
-        public MCTS_Dames(int color, Move move, MCTS parent, Dames dames) {
+        public MCTS_Dames(int color, Move move, MCTS parent) {
             super(color, move, parent);
-            this.dames = dames;
-        }
-
-        @Override
-        boolean isGameOver() {
-            return dames.getLegalMoves(mycolor == 1).isEmpty();
-        }
-
-        @Override
-        int getWinner() {
-            if (value() > 0){
-                return 0;
-            }
-            else if (value() < 1){
-                return 1;
-            }
-            return -1;
-        }
-
-        @Override
-        ArrayList<Move> getLegalMoves() {
-            return dames.getLegalMoves(mycolor == 1);
-        }
-
-        @Override
-        void doMove(int color, Move move) {
-            simulateMove((DamesMove) move, color == 1);
-        }
-
-        @Override
-        void undoMove(int color, Move move) {
-            simulateUndoMove((DamesMove) move);
         }
 
         @Override
         MCTS newMCTS(int color, Move move, MCTS parent) {
-            return new MCTS_Dames(color, move, parent, this.dames);
+            return new MCTS_Dames(color, move, parent);
         }
 
-        @Override
-        Move chooseRandomMove(int color) {
-            ArrayList<Move> moves = getLegalMoves();
-            return moves.get((int) (Math.random() * moves.size()));
-        }
 
         @Override
         Context getContext() {
@@ -371,12 +657,12 @@ public class Dames extends AppCompatActivity {
     }
 
     MCTS newMCTS(int color){
-        return new Dames.MCTS_Dames(color, null, null, this);
+        return new Dames.MCTS_Dames(color, null, null);
     }
 
-    void updateTree(DamesMove move){
+    void updateTree(PlateauDames.DamesMove move){
         for (MCTS child : this.root.children){
-            DamesMove mv = (DamesMove) child.move;
+            PlateauDames.DamesMove mv = (PlateauDames.DamesMove) child.move;
             if (move.isEqual(mv)){
                 this.root = child;
                 this.root.parent = null;
@@ -395,15 +681,6 @@ public class Dames extends AppCompatActivity {
         params = new LinearLayout.LayoutParams((int) (0.8 * width), (int) (0.8 * width));
         params.setMargins((int) (0.1 * width), (int) (0.1 * width),(int) (0.1 * width), (int) (0.1 * width));
         tab_piece = new Table(grille_piece, taille, taille, this, params, (int) (0.8 * width));
-    }
-
-    boolean contains(ArrayList<Piece> pieces, Piece piece){
-        for (Piece p : pieces){
-            if (p == piece){
-                return true;
-            }
-        }
-        return false;
     }
 
     boolean contains(ArrayList<Pair<Integer,Integer>> path, Pair<Integer,Integer> coordinate){
@@ -428,13 +705,13 @@ public class Dames extends AppCompatActivity {
             return;
         }
         if (possibleMoves.isEmpty()) {
-            if (value[i][j] == null || value[i][j].getColor() != color) {
+            if (plateau.value[i][j] == null || plateau.value[i][j].getColor() != color) {
                 return;
             }
-            moves = value[i][j].getLegalMoves();
+            moves = plateau.value[i][j].getLegalMoves(i,j);
             if (!moves.isEmpty()) {
                 currentMove.add(new Pair(i, j));
-                for (DamesMove move : moves) {
+                for (PlateauDames.DamesMove move : moves) {
                     Pair<Integer, Integer> coordinate = move.positions.get(1);
                     tab_board.getButton(coordinate.first, coordinate.second).setBackgroundResource(R.drawable.possible_gris);
                     possibleMoves.add(new Pair(coordinate.first, coordinate.second));
@@ -444,8 +721,8 @@ public class Dames extends AppCompatActivity {
         else{
             if (contains(possibleMoves, new Pair(i, j))) {
                 currentMove.add(new Pair(i, j));
-                ArrayList<DamesMove> finalMoves = new ArrayList<>();
-                for (DamesMove move : moves) {
+                ArrayList<PlateauDames.DamesMove> finalMoves = new ArrayList<>();
+                for (PlateauDames.DamesMove move : moves) {
                     if (contains(currentMove, move.positions)){
                         finalMoves.add(move);
                     }
@@ -464,7 +741,7 @@ public class Dames extends AppCompatActivity {
                 else{
                     tab_board.getButton(i, j).setBackgroundResource(R.drawable.path);
                     int ind = currentMove.size();
-                    for (DamesMove move : moves) {
+                    for (PlateauDames.DamesMove move : moves) {
                         Pair<Integer, Integer> coordinate = move.positions.get(ind);
                         tab_board.getButton(coordinate.first, coordinate.second).setBackgroundResource(R.drawable.possible_gris);
                         possibleMoves.add(new Pair(coordinate.first, coordinate.second));
@@ -488,11 +765,10 @@ public class Dames extends AppCompatActivity {
         }
     }
 
-    void doMove(final DamesMove move, final int ind){
-        if (ind >= move.positions.size() - 1){
+    void doMove(final PlateauDames.DamesMove move, final int ind){
+        if (ind == move.positions.size() - 1){
             updateTree(move);
-            //Toast.makeText(this, "" + root.n, Toast.LENGTH_SHORT).show();
-            color = !color;
+            color = 1 - color;
             if (end()){
                 return;
             }
@@ -511,8 +787,8 @@ public class Dames extends AppCompatActivity {
                 );
                 s.start();
             }
-            if (nbPlayer == 1){
-                if (color) {
+            else if (nbPlayer == 1){
+                if (color == 1) {
                     s = new AnimatorSet();
                     ObjectAnimator objectAnimator = ObjectAnimator.ofObject(main, "TextColor", new ArgbEvaluator(), Color.BLACK, Color.BLACK);
                     objectAnimator.setDuration(200);
@@ -539,27 +815,26 @@ public class Dames extends AppCompatActivity {
         s = new AnimatorSet();
         Pair<Integer, Integer> start = move.positions.get(ind);
         Pair<Integer, Integer> end = move.positions.get(ind + 1);
-        value[end.first][end.second] = value[start.first][start.second];
-        value[end.first][end.second].setCoordinate(end.first, end.second);
+        plateau.value[end.first][end.second] = plateau.value[start.first][start.second];
         tab_board.getButton(end.first, end.second).setBackgroundColor(getColor(R.color.grey));
         ObjectAnimator objectAnimator1;
-        if (ind == move.positions.size() - 2 && !value[end.first][end.second].getColor() && end.first == 0) {
-            value[end.first][end.second].Dame = true;
+        if (ind == move.positions.size() - 2 && plateau.value[end.first][end.second].getColor() == 0 && end.first == 0) {
+            plateau.value[end.first][end.second].Dame = true;
             objectAnimator1 = ObjectAnimator.ofObject(tab_piece.getButton(end.first, end.second), "backgroundResource", new ArgbEvaluator(), R.drawable.beigedame, R.drawable.beigedame);
         }
-        else if(ind == move.positions.size() - 2 && value[end.first][end.second].getColor() && end.first == taille - 1){
-            value[end.first][end.second].Dame = true;
+        else if(ind == move.positions.size() - 2 && plateau.value[end.first][end.second].getColor() == 1 && end.first == taille - 1){
+            plateau.value[end.first][end.second].Dame = true;
             objectAnimator1 = ObjectAnimator.ofObject(tab_piece.getButton(end.first, end.second), "backgroundResource", new ArgbEvaluator(), R.drawable.blackdame, R.drawable.blackdame);
         }
         else {
-            if (value[end.first][end.second].getColor()) {
-                if (value[end.first][end.second].Dame) {
+            if (plateau.value[end.first][end.second].getColor() == 1) {
+                if (plateau.value[end.first][end.second].Dame) {
                     objectAnimator1 = ObjectAnimator.ofObject(tab_piece.getButton(end.first, end.second), "backgroundResource", new ArgbEvaluator(), R.drawable.blackdame, R.drawable.blackdame);
                 } else {
                     objectAnimator1 = ObjectAnimator.ofObject(tab_piece.getButton(end.first, end.second), "backgroundResource", new ArgbEvaluator(), R.drawable.blackbutton, R.drawable.blackbutton);
                 }
             } else {
-                if (value[end.first][end.second].Dame) {
+                if (plateau.value[end.first][end.second].Dame) {
                     objectAnimator1 = ObjectAnimator.ofObject(tab_piece.getButton(end.first, end.second), "backgroundResource", new ArgbEvaluator(), R.drawable.beigedame, R.drawable.beigedame);
                 } else {
                     objectAnimator1 = ObjectAnimator.ofObject(tab_piece.getButton(end.first, end.second), "backgroundResource", new ArgbEvaluator(), R.drawable.beigebutton, R.drawable.beigebutton);
@@ -568,7 +843,7 @@ public class Dames extends AppCompatActivity {
         }
         objectAnimator1.setDuration(300);
         s.play(objectAnimator1);
-        value[start.first][start.second] = null;
+        plateau.value[start.first][start.second] = null;
         ObjectAnimator objectAnimator = ObjectAnimator.ofObject(tab_piece.getButton(start.first, start.second), "backgroundColor", new ArgbEvaluator(), getColor(R.color.trans), getColor(R.color.trans));
         objectAnimator.setDuration(300);
         s.play(objectAnimator).with(objectAnimator1);
@@ -577,7 +852,7 @@ public class Dames extends AppCompatActivity {
         for (int k = 1; k < abs; k++){
             int i = start.first + (k * (end.first - start.first)) / abs;
             int j = start.second + (k * (end.second - start.second)) / abs;
-            value[i][j] = null;
+            plateau.value[i][j] = null;
             objectAnimator = ObjectAnimator.ofObject(tab_piece.getButton(i,j), "backgroundColor", new ArgbEvaluator(), getColor(R.color.trans), getColor(R.color.trans));
             objectAnimator.setDuration(300);
             s.play(objectAnimator).with(objectAnimator1);
@@ -593,310 +868,28 @@ public class Dames extends AppCompatActivity {
         s.start();
     }
 
-    boolean mustEat(){
-        for (int i = 0; i < taille; i++){
-            for (int j = 0; j < taille; j++){
-                if (value[i][j] != null && value[i][j].getColor() == color){
-                    ArrayList<DamesMove> moves = value[i][j].getMoves();
-                    if (!moves.isEmpty() && !moves.get(0).eatenPieces.isEmpty()){
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-    private void addeatMoves(ArrayList<DamesMove> moves, DamesMove currentMove, boolean color, int i, int j, int direction, boolean Dame){
-        boolean end = true;
-        if (!Dame) {
-            if (direction == 1) {
-                if (i < taille - 2) {
-                    if (j < taille - 2) {
-                        if (value[i + 2][j + 2] == null && value[i + 1][j + 1] != null && ((value[i + 1][j + 1].getValue() > 0 && color) || (value[i + 1][j + 1].getValue() < 0 && !color)) && !contains(currentMove.eatenPieces, value[i + 1][j + 1])) {
-                            currentMove.positions.add(new Pair(i + 2, j + 2));
-                            currentMove.eatenPieces.add(value[i + 1][j + 1]);
-                            addeatMoves(moves, currentMove, color, i + 2, j + 2, direction, Dame);
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                            currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
-                            end = false;
-
-                        }
-                    }
-                    if (j > 1) {
-                        if (value[i + 2][j - 2] == null && value[i + 1][j - 1] != null && ((value[i + 1][j - 1].getValue() > 0 && color) || (value[i + 1][j - 1].getValue() < 0 && !color)) && !contains(currentMove.eatenPieces, value[i + 1][j - 1])) {
-                            currentMove.positions.add(new Pair(i + 2, j - 2));
-                            currentMove.eatenPieces.add(value[i + 1][j - 1]);
-                            addeatMoves(moves, currentMove, color, i + 2, j - 2, direction, Dame);
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                            currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
-                            end = false;
-                        }
-                    }
-                }
-                if (i > 1) {
-                    if (j < taille - 2) {
-                        if (value[i - 2][j + 2] == null && value[i - 1][j + 1] != null && ((value[i - 1][j + 1].getValue() > 0 && color) || (value[i - 1][j + 1].getValue() < 0 && !color)) && !contains(currentMove.eatenPieces, value[i - 1][j + 1])) {
-                            currentMove.positions.add(new Pair(i - 2, j + 2));
-                            currentMove.eatenPieces.add(value[i - 1][j + 1]);
-                            addeatMoves(moves, currentMove, color, i - 2, j + 2, direction, Dame);
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                            currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
-                            end = false;
-
-                        }
-                    }
-                    if (j > 1) {
-                        if (value[i - 2][j - 2] == null && value[i - 1][j - 1] != null && ((value[i - 1][j - 1].getValue() > 0 && color) || (value[i - 1][j - 1].getValue() < 0 && !color)) && !contains(currentMove.eatenPieces, value[i - 1][j - 1])) {
-                            currentMove.positions.add(new Pair(i - 2, j - 2));
-                            currentMove.eatenPieces.add(value[i - 1][j - 1]);
-                            addeatMoves(moves, currentMove, color, i - 2, j - 2, direction, Dame);
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                            currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
-                            end = false;
-                        }
-                    }
-
-                }
-            }
-        }
-        else{
-            for (int x = -1; x < 2;  x = x + 2){
-                    for (int y = -1; y < 2; y = y + 2){
-                        if (x * y == direction) {
-                            int k = 1;
-                            int eaten = 0;
-                            while (i + x * k >= 0 && i + x * k < taille && j + y * k >= 0 && j + y * k < taille) {
-                                if (value[i + x * k][j + y * k] != null && ((value[i + x * k][j + y * k].getValue() > 0 && color) || (value[i + x * k][j + y * k].getValue() < 0 && !color))) {
-                                    if (i + x * (k + 1) >= 0 && i + x * (k + 1) < taille && j + y * (k + 1) >= 0 && j + y * (k + 1) < taille && value[i + x * (k + 1)][j + y * (k + 1)] == null && !contains(currentMove.eatenPieces, value[i + x * k][j + y * k])) {
-                                        currentMove.eatenPieces.add(value[i + x * k][j + y * k]);
-                                        eaten++;
-                                    } else {
-                                        break;
-                                    }
-                                } else if (value[i + x * k][j + y * k] == null) {
-                                    currentMove.positions.add(new Pair(i + x * k, j + y * k));
-                                    if (eaten > 0) {
-                                        addeatMoves(moves, currentMove, color, i + x * k, j + y * k, -direction, Dame);
-                                        end = false;
-                                    }
-                                    currentMove.positions.remove(currentMove.positions.size() - 1);
-                                }
-                                else{
-                                    break;
-                                }
-                                k++;
-
-                            }
-                            while (eaten > 0) {
-                                currentMove.eatenPieces.remove(currentMove.eatenPieces.size() - 1);
-                                eaten--;
-                            }
-                        }
-                    }
-                }
-        }
-        if (end && currentMove.positions.size() > 1){
-            if (!Dame) {
-                moves.add(currentMove.copy());
-            } else {
-                boolean add = true;
-                Pair<Integer, Integer> coordinate = currentMove.positions.get(currentMove.positions.size() - 1);
-                for (int x = -1; add && x < 2; x = x + 2) {
-                    for (int y = -1; add && y < 2; y = y + 2) {
-                        if (coordinate.first + 2 * x >= 0 && coordinate.first + 2 * x < taille && coordinate.second + 2 * y >= 0 && coordinate.second+ 2 * y < taille){
-                            if (value[coordinate.first + x][coordinate.second + y] != null && ((value[coordinate.first + x][coordinate.second + y].getValue() > 0 && color) || (value[coordinate.first + x][coordinate.second + y].getValue() < 0 && !color)) && value[coordinate.first + 2 * x][coordinate.second + 2 * y] == null && !contains(currentMove.eatenPieces, value[coordinate.first + x][coordinate.second + y])){
-                                add = false;
-                            }
-                        }
-                    }
-                }
-                if (add){
-                    moves.add(currentMove.copy());
-                }
-            }
-        }
-    }
-
-    ArrayList<DamesMove> getMoves(boolean color, int i, int j){
-        ArrayList<DamesMove> moves = new ArrayList<>();
-        DamesMove currentMove = new DamesMove();
-        currentMove.positions.add(new Pair(i,j));
-        addeatMoves(moves, currentMove, color, i, j, 1, value[i][j].Dame);
-        addeatMoves(moves, currentMove, color, i, j, -1, value[i][j].Dame);
-        if (!value[i][j].Dame) {
-            if (color) {
-                if (i < taille - 1) {
-                    if (j < taille - 1) {
-                        if (value[i + 1][j + 1] == null) {
-                            currentMove.positions.add(new Pair(i + 1, j + 1));
-                            moves.add(currentMove.copy());
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                        }
-                    }
-                    if (j > 0) {
-                        if (value[i + 1][j - 1] == null) {
-                            currentMove.positions.add(new Pair(i + 1, j - 1));
-                            moves.add(currentMove.copy());
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                        }
-                    }
-                }
-            } else {
-                if (i > 0) {
-                    if (j < taille - 1) {
-                        if (value[i - 1][j + 1] == null) {
-                            currentMove.positions.add(new Pair(i - 1, j + 1));
-                            moves.add(currentMove.copy());
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                        }
-                    }
-                    if (j > 0) {
-                        if (value[i - 1][j - 1] == null) {
-                            currentMove.positions.add(new Pair(i - 1, j - 1));
-                            moves.add(currentMove.copy());
-                            currentMove.positions.remove(currentMove.positions.size() - 1);
-                        }
-                    }
-                }
-            }
-        }
-        else{
-            for (int x = -1; x < 2; x = x + 2){
-                for (int y = -1; y < 2; y = y + 2){
-                    int k = 1;
-                    while (i + x * k >= 0 && i + x * k < taille && j + y * k >= 0 && j + y * k < taille && value[i + x * k][j + y * k] == null){
-                        currentMove.positions.add(new Pair(i + x * k, j + y * k ));
-                        moves.add(currentMove.copy());
-                        currentMove.positions.remove(currentMove.positions.size() - 1);
-                        k++;
-                    }
-                }
-            }
-        }
-        return moves;
-    }
-    ArrayList<Move> getLegalMoves(boolean color) {
-        ArrayList<Move> moves = new ArrayList<>();
-        boolean mustEat = false;
-        for (int i = 0; i < taille; i++){
-            for (int j = 0; j < taille; j++){
-                if (value[i][j] != null && ((value[i][j].getValue() > 0 && !color) || (value[i][j].getValue() < 0 && color))){
-                    ArrayList<DamesMove> pieceMoves = getMoves(color, i, j);
-                    if (!pieceMoves.isEmpty() && !pieceMoves.get(0).eatenPieces.isEmpty()){
-                        mustEat = true;
-                        moves.clear();
-                    }
-                    if (!mustEat){
-                        moves.addAll(pieceMoves);
-                    }
-                    else{
-                        int ind = 0;
-                        while (ind < pieceMoves.size() && !pieceMoves.get(ind).eatenPieces.isEmpty()){
-                            moves.add(pieceMoves.get(ind));
-                            ind++;
-                        }
-                    }
-                }
-            }
-        }
-        return moves;
-    }
-
-    void simulateMove(DamesMove move, boolean color){
-        Pair<Integer, Integer> start = move.positions.get(0);
-        Pair<Integer, Integer> end = move.positions.get(move.positions.size() - 1);
-        value[end.first][end.second] = value[start.first][start.second];
-        value[end.first][end.second].i = end.first;
-        value[end.first][end.second].j = end.second;
-        if ((!color && end.first == 0 || color && end.first == taille - 1) && !value[end.first][end.second].Dame){
-            move.newDame = true;
-        }
-        if (move.newDame){
-            value[end.first][end.second].Dame = true;
-        }
-        value[start.first][start.second] = null;
-        for (Piece piece : move.eatenPieces){
-            value[piece.i][piece.j] = null;
-        }
-
-    }
-
-    void simulateUndoMove(DamesMove move){
-        Pair<Integer, Integer> start = move.positions.get(0);
-        Pair<Integer, Integer> end = move.positions.get(move.positions.size() - 1);
-        value[start.first][start.second] = value[end.first][end.second];
-        value[start.first][start.second].i = start.first;
-        value[start.first][start.second].j = start.second;
-        if (move.newDame){
-            value[start.first][start.second].Dame = false;
-        }
-        value[end.first][end.second] = null;
-        for (Piece piece : move.eatenPieces){
-            value[piece.i][piece.j] = piece;
-        }
-    }
-/*
-    int[][] createTabValue(){
-        int[][] value = new int[taille][taille];
-        for (int i = 0; i < taille; i++){
-            for (int j = 0; j < taille; j++){
-                if (value[i][j] == null){
-                    value[i][j] = 0;
-                }
-                else{
-                    if (value[i][j].getColor()){
-                        if (value[i][j].Dame)
-                            value[i][j] = -5;
-                        else
-                            value[i][j] = -1;
-                    }
-                    else{
-                        if (value[i][j].Dame)
-                            value[i][j] = 5;
-                        else
-                            value[i][j] = 1;
-                    }
-                }
-            }
-        }
-        return value;
-    }
-
- */
-
-    int value(){
-        int v = 0;
-        for (int i = 0; i < taille; i++){
-            for (int j = 0; j < taille; j++){
-                if (value[i][j] != null)
-                    v += value[i][j].getValue();
-            }
-        }
-        return v;
-    }
-
-    Pair<ArrayList<DamesMove>, Integer> alphaBeta(boolean color, int depth, int alpha, int beta){
+    Pair<ArrayList<PlateauDames.DamesMove>, Integer> alphaBeta(int color, int depth, int alpha, int beta){
         if (depth == 0){
-            return new Pair(new ArrayList<>(), value());
+            return new Pair(new ArrayList<>(), plateau.value());
         }
-        ArrayList<DamesMove> bestMoves = new ArrayList<>();
-        ArrayList<Move> legalMoves = getLegalMoves(color);
+        ArrayList<PlateauDames.DamesMove> bestMoves = new ArrayList<>();
+        ArrayList<Move> legalMoves = plateau.getLegalMoves(color);
         if (legalMoves.isEmpty()){
-            return new Pair(new ArrayList<>(), value());
+            return new Pair(new ArrayList<>(), plateau.value());
         }
-        if (!color){
+        if (color == 0){
             int max = -10000;
             for (Move move : legalMoves){
-                simulateMove((DamesMove) move, color);
-                Pair<ArrayList<DamesMove>, Integer> m = alphaBeta(!color, depth - 1, alpha, beta);
-                simulateUndoMove((DamesMove) move);
+                plateau.doMove((PlateauDames.DamesMove) move);
+                Pair<ArrayList<PlateauDames.DamesMove>, Integer> m = alphaBeta(1 - color, depth - 1, alpha, beta);
+                plateau.undoMove((PlateauDames.DamesMove) move);
                 if (m.second == max){
-                    bestMoves.add((DamesMove) move);
+                    bestMoves.add((PlateauDames.DamesMove) move);
                 }
                 else if (m.second > max) {
                     max = m.second;
                     bestMoves.clear();
-                    bestMoves.add((DamesMove) move);
+                    bestMoves.add((PlateauDames.DamesMove) move);
                 }
                 if (max >= beta){
                     return new Pair(bestMoves, max);
@@ -910,16 +903,16 @@ public class Dames extends AppCompatActivity {
         else{
             int min = 10000;
             for (Move move : legalMoves){
-                simulateMove((DamesMove) move, color);
-                Pair<ArrayList<DamesMove>, Integer> m = alphaBeta(!color, depth - 1, alpha, beta);
-                simulateUndoMove((DamesMove) move);
+                plateau.doMove((PlateauDames.DamesMove) move);
+                Pair<ArrayList<PlateauDames.DamesMove>, Integer> m = alphaBeta(1 - color, depth - 1, alpha, beta);
+                plateau.undoMove((PlateauDames.DamesMove) move);
                 if (m.second == min){
-                    bestMoves.add((DamesMove) move);
+                    bestMoves.add((PlateauDames.DamesMove) move);
                 }
                 else if (m.second < min) {
                     min = m.second;
                     bestMoves.clear();
-                    bestMoves.add((DamesMove) move);
+                    bestMoves.add((PlateauDames.DamesMove) move);
                 }
                 if (min <= alpha){
                     return new Pair(bestMoves, min);
@@ -936,17 +929,19 @@ public class Dames extends AppCompatActivity {
         canMove = false;
         //Pair<ArrayList<DamesMove>, Integer> alphaBeta = alphaBeta(color, maxDepthAlphaBeta, -10000, 10000);
         //doMove(alphaBeta.first.get((int) (Math.random() * alphaBeta.first.size())), 0);
-        doMove((DamesMove) root.getBestMove(2000, true, 20), 0);
+        doMove((PlateauDames.DamesMove) root.getBestMove(plateau, 2000, 100, true, 20), 0);
     }
 
 
+
+
     boolean end(){
-        if (getLegalMoves(color).isEmpty()){
+        if (plateau.getLegalMoves(color).isEmpty()){
             AlertDialog.Builder fin_ = new AlertDialog.Builder(this);
-            if (value() > 0){
+            if (plateau.value() > 0){
                 fin_.setTitle("Victoire des blancs");
             }
-            else if (value() < 0){
+            else if (plateau.value() < 0){
                 fin_.setTitle("Victoire des noirs");
             }
             else{
@@ -984,13 +979,11 @@ public class Dames extends AppCompatActivity {
     void new_(){
         s.pause();
         canMove = true;
-        color = false;
-        this.root = newMCTS(0);
+        color = 0;
         Button b_board;
         Button b_piece;
         for (int i=0; i<taille;i++) {
             for (int j = 0; j < taille; j++) {
-                value[i][j] = null;
                 b_board = tab_board.getButton(i,j);
                 b_piece = tab_piece.getButton(i,j);
                 b_piece.setBackgroundColor(getColor(R.color.trans));
@@ -999,15 +992,11 @@ public class Dames extends AppCompatActivity {
                 }
                 else{
                     b_board.setBackgroundColor(getColor(R.color.grey));
-                    if (i < taille / 2 - 1) {
-                        new Piece(true, i, j);
-                    }
-                    else if (i > taille / 2){
-                        new Piece(false, i, j);
-                    }
                 }
             }
         }
+        plateau = new PlateauDames();
+        this.root = newMCTS(0);
         if (nbPlayer == 0) {
             s = new AnimatorSet();
             ObjectAnimator objectAnimator = ObjectAnimator.ofObject(main, "TextColor", new ArgbEvaluator(), Color.BLACK, Color.BLACK);

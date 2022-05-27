@@ -14,4 +14,7 @@
     <color name="grey">#808080 </color>
     <color name="trans">#00000000 </color>
     <color name="transgrey">#AA808080 </color>
+    <color name="orange">#ff7f00 </color>
+    <color name="violet">#7f00ff </color>
+    <color name="pink">#ff0084 </color>
 </resources>

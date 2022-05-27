@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 
 
@@ -13,11 +14,13 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.ToggleButton;
 
 import java.util.ArrayList;
@@ -32,6 +35,7 @@ public class Jeu_de_la_vie extends AppCompatActivity {
     private int taille = 50;
     private int color[][]= new int[taille][taille];
     private int copy[][]=new int[taille][taille];
+    private int height;
 
 
     //private AnimatorSet s = new AnimatorSet();
@@ -240,6 +244,19 @@ public class Jeu_de_la_vie extends AppCompatActivity {
         });
 
 
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        height = findViewById(android.R.id.content).getHeight() - main.getHeight() - alea.getHeight();
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        ScrollView scrollView = findViewById(R.id.scroll);
+        ConstraintLayout.LayoutParams p1 = (ConstraintLayout.LayoutParams) scrollView.getLayoutParams();
+        ConstraintLayout.LayoutParams p = new ConstraintLayout.LayoutParams(metrics.widthPixels, height);
+        p.topToBottom = p1.topToBottom;
+        p.bottomToTop = p1.bottomToTop;
+        scrollView.setLayoutParams(p);
     }
 
 }

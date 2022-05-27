@@ -811,7 +811,7 @@ public class Sudoku extends AppCompatActivity {
                             }
                         }
                         if (cross && i == j) {
-                            for (int x = 0; x < 9; x++) {
+                           for (int x = 0; x < 9; x++) {
                                 if(t[x][x]!=0) {
                                     int m=t[x][x];
                                     t[x][x]=0;
