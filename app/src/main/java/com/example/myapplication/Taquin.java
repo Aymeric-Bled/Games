@@ -1,7 +1,10 @@
 package com.example.myapplication;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -13,8 +16,11 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Pair;
+import android.view.SearchEvent;
 import android.view.View;
 
 import android.widget.AdapterView;
@@ -22,10 +28,20 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.couchbase.lite.Array;
+import com.couchbase.lite.CouchbaseLite;
+import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.Database;
+import com.couchbase.lite.Document;
+import com.couchbase.lite.MutableArray;
+import com.couchbase.lite.MutableDocument;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -35,7 +51,7 @@ public class Taquin extends AppCompatActivity {
     private Button main;
     private Button alea;
     private Button solveur;
-    private int taille = 4;
+    private int taille;
     private int tab[][];
     private Table table;
     private boolean solver = false;
@@ -49,7 +65,6 @@ public class Taquin extends AppCompatActivity {
     private AnimatorSet s = new AnimatorSet();;
 
     void create_table(){
-        tab=new int[taille][taille];
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         int w=(metrics.widthPixels - taille - 1)/taille;
@@ -58,12 +73,11 @@ public class Taquin extends AppCompatActivity {
         table = new Table((GridLayout) findViewById(R.id.grille), taille, taille, this, params, w);
         for (int i = 0; i < taille; i++)
             for (int j = 0; j < taille; j++){
-                tab[i][j] = (taille * i + j + 1) % (taille * taille);
                 Button b = table.getButton(i,j);
                 b.setTextSize(w/6);
-                if (i*taille + j != taille * taille - 1) {
+                if (tab[i][j] != 0) {
                     b.setBackgroundResource(R.drawable.taquinbutton);
-                    b.setText(""+ (taille*i+j+1));
+                    b.setText(""+ (tab[i][j]));
                     b.setTextColor(Color.WHITE);
                 }
                 else
@@ -364,6 +378,7 @@ public class Taquin extends AppCompatActivity {
     }
 
     void solve() {
+        solver = true;
         int v = value(tab);
         if (v == 0 && range < taille - 1)
             range ++;
@@ -402,17 +417,23 @@ public class Taquin extends AppCompatActivity {
     void doSolve() {
         if (canSolve()){
             range = 1;
-            s = new AnimatorSet();
-            ObjectAnimator animator =  ObjectAnimator.ofObject(main, "TextColor", new ArgbEvaluator(), Color.BLACK, Color.BLACK);
-            animator.setDuration(500);
-            s.play(animator);
-            s.addListener(new AnimatorListenerAdapter() {
+            new Thread(){
                 @Override
-                public void onAnimationEnd(Animator animation) {
-                    solve();
+                public void run() {
+                    super.run();
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            solve();
+                        }
+                    });
                 }
-            });
-            s.start();
+            }.start();
         }
         else{
             s.pause();
@@ -426,40 +447,16 @@ public class Taquin extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_taquin);
-        create_table();
-        alea();
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                s.pause();
-                solver = false;
                 Intent main = new Intent(getApplicationContext(),MainActivity.class);
                 startActivity(main);
                 finish();
             }
         });
-        this.t = findViewById(R.id.taille);
-        ArrayAdapter tailles = new ArrayAdapter(this, android.R.layout.simple_spinner_item, Taille);
-        t.setAdapter(tailles);
-        t.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                solver = false;
-                s.pause();
-                if (taille != position + 3) {
-                    taille = position + 3;
-                    create_table();
-                    alea();
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-        t.setSelection(1);
         this.solveur = findViewById(R.id.solver);
         solveur.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -471,11 +468,160 @@ public class Taquin extends AppCompatActivity {
         alea.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                solver = false;
                 s.pause();
+                solver = false;
                 alea();
             }
         });
 
+        this.t = findViewById(R.id.taille);
+        ArrayAdapter tailles = new ArrayAdapter(this, android.R.layout.simple_spinner_item, Taille);
+        t.setAdapter(tailles);
+        t.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                s.pause();
+                solver = false;
+                if (taille != position + 3) {
+                    taille = position + 3;
+                    tab=new int[taille][taille];
+                    for (int i = 0; i < taille; i++) {
+                        for (int j = 0; j < taille; j++) {
+                            tab[i][j] = (taille * i + j + 1) % (taille * taille);
+                        }
+                    }
+                    create_table();
+                    alea();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        CouchbaseLite.init(this);
+        Database database;
+        Document document = null;
+        boolean hasSave = false;
+        try {
+            database = new Database("games");
+            document = database.getDocument("taquin");
+            if (document != null){
+                document.getArray("tab");
+                document.getInt("taille");
+                document.getBoolean("solver");
+                hasSave = true;
+            }
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+        if (hasSave) {
+            taille = document.getInt("taille");
+            tab=new int[taille][taille];
+            t.setSelection(tailles.getPosition(taille));
+            for (int i = 0; i < taille; i++) {
+                for (int j = 0; j < taille; j++) {
+                    tab[i][j] = document.getArray("tab").getArray(i).getInt(j);
+                }
+            }
+            create_table();
+            solver = document.getBoolean("solver");
+            if (solver){
+                new Thread(){
+                    @Override
+                    public void run() {
+                        super.run();
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                range = 1;
+                                solve();
+                            }
+                        });
+                    }
+                }.start();
+            }
+        }
+        else{
+            taille = 4;
+            tab=new int[taille][taille];
+            t.setSelection(1);
+            for (int i = 0; i < taille; i++) {
+                for (int j = 0; j < taille; j++) {
+                    tab[i][j] = (taille * i + j + 1) % (taille * taille);
+                }
+            }
+            create_table();
+            alea();
+        }
     }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        if (solver) {
+            s.resume();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Database database;
+        try {
+            database = new Database("games");
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+            return;
+        }
+        MutableDocument document = new MutableDocument("taquin");
+        MutableArray array = new MutableArray();
+        for (int i = 0 ; i < taille; i++){
+            MutableArray arr = new MutableArray();
+            for (int j = 0; j < taille; j++){
+                arr.addInt(tab[i][j]);
+            }
+            array.addArray(arr);
+        }
+        document.setArray("tab", array);
+        document.setInt("taille", taille);
+        document.setBoolean("solver", solver);
+        try {
+            database.save(document);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        s.pause();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        int height = findViewById(android.R.id.content).getHeight();
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int width = metrics.widthPixels;
+        int w = Math.min(height, width) / taille;
+        table.setButtonsDimension(w, w);
+        for (int i = 0; i < taille; i++) {
+            for (int j = 0; j < taille; j++) {
+                Button b = table.getButton(i, j);
+                b.setTextSize(w / 6);
+            }
+        }
+
+    }
+
+
 }

@@ -23,6 +23,13 @@ import android.widget.GridLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
+import com.couchbase.lite.CouchbaseLite;
+import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.Database;
+import com.couchbase.lite.Document;
+import com.couchbase.lite.MutableArray;
+import com.couchbase.lite.MutableDocument;
+
 import java.util.ArrayList;
 
 public class Demineur extends AppCompatActivity {
@@ -32,6 +39,7 @@ public class Demineur extends AppCompatActivity {
     private Button flag;
     private int taille = 20;
     private int mines = 60;
+    private boolean fini = false;
     private Table tab;
     private boolean tab_flag[][] = new boolean[taille][taille];
     private boolean tab_mines[][]=new boolean[taille][taille];
@@ -45,7 +53,7 @@ public class Demineur extends AppCompatActivity {
     void create_demineur(){
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        x=(int) ((metrics.widthPixels + 1)/(9.5));
+        x= 120;
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(x-1, x-1);
         params.setMargins(1,1,1,1);
         ScrollView scrollView = (ScrollView) findViewById(R.id.scroll);
@@ -59,8 +67,24 @@ public class Demineur extends AppCompatActivity {
         for (int i=0; i<taille;i++) {
             for (int j = 0; j < taille; j++) {
                 b = tab.getButton(i,j);
-                b.setBackgroundColor(getColor(R.color.colorPrimaryDark));
-                tab_flag[i][j]=false;
+                b.setText(ch[tab_values[i][j]]);
+                if (tab_mines[i][j] && fini){
+                    b.setBackgroundResource(R.drawable.mine);
+                    b.setTextColor(Color.TRANSPARENT);
+                }
+                else if (tab_flag[i][j]){
+                    b.setBackgroundResource(R.drawable.flag);
+                    b.setTextColor(Color.TRANSPARENT);
+                }
+                else if (tab_seen[i][j]){
+                    b.setBackgroundColor(Color.WHITE);
+                    b.setTextColor(Color.BLACK);
+                }
+                else{
+                    b.setBackgroundColor(getColor(R.color.colorPrimaryDark));
+                    b.setTextColor(Color.TRANSPARENT);
+
+                }
             }
         }
         déminer.setWidth(metrics.widthPixels/2);
@@ -97,6 +121,9 @@ public class Demineur extends AppCompatActivity {
     }
 
     void flag(){
+        if (fini){
+            return;
+        }
         int position = place(currentButton);
         if (position != -1 && !tab_seen[position/taille][position%taille]) {
             if (tab_flag[position / taille][position % taille]) {
@@ -170,27 +197,25 @@ public class Demineur extends AppCompatActivity {
                 tab_mines[alea[i]/taille][alea[i]%taille] = false;
             }
         }
-        Button button;
-        for (int i =0; i< taille*taille; i++){
-            button = tab.getButton(i/taille, i%taille);
-            button.setText(ch[tab_values[i / taille][i % taille]]);
-            button.setTextColor(getColor(R.color.trans));
-        }
     }
 
     void new_(){
+        fini = false;
         Button b;
+        initialise_mines();
         for (int i=0; i< taille; i++){
             for (int j =0; j < taille; j++){
                 b=tab.getButton(i,j);
+                b.setText(ch[tab_values[i][j]]);
+                b.setTextColor(Color.TRANSPARENT);
                 b.setBackgroundColor(getColor(R.color.colorPrimaryDark));
             }
         }
-        initialise_mines();
         currentButton = null;
     }
 
     void end(boolean b){
+        fini = true;
         Button animation = findViewById(R.id.anim);
         animation.setBackgroundColor(Color.RED);
         AnimatorSet s = new AnimatorSet();
@@ -212,7 +237,7 @@ public class Demineur extends AppCompatActivity {
             q2 = new ArrayList<>();
             while(!q1.isEmpty()) {
                 n = q1.remove(0);
-                tab_seen[n / taille][n % taille] = true;
+                already_seen[n] = true;
                 if (tab_mines[n / taille][n % taille]) {
                     button = tab.getButton(n / taille, n % taille);
                     if (n == position)
@@ -402,6 +427,9 @@ public class Demineur extends AppCompatActivity {
         déminer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (fini){
+                    return;
+                }
                 int position = place(currentButton);
                 int p = position;
 
@@ -453,12 +481,94 @@ public class Demineur extends AppCompatActivity {
                 new_();
             }
         });
+        CouchbaseLite.init(this);
+        Database database;
+        Document document = null;
+        boolean hasSave = false;
+        try {
+            database = new Database("games");
+            document = database.getDocument("démineur");
+            if (document != null) {
+                document.getInt("taille");
+                document.getInt("mines");
+                document.getBoolean("fini");
+                document.getArray("tab_flag");
+                document.getArray("tab_mines");
+                document.getArray("tab_values");
+                document.getArray("tab_seen");
+                hasSave = true;
+            }
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+        if (hasSave) {
+            taille = document.getInt("taille");
+            mines = document.getInt("mines");
+            fini = document.getBoolean("fini");
+            for (int i = 0; i < taille; i++) {
+                for (int j = 0; j < taille; j++) {
+                    tab_flag[i][j] = document.getArray("tab_flag").getArray(i).getBoolean(j);
+                    tab_mines[i][j] = document.getArray("tab_mines").getArray(i).getBoolean(j);
+                    tab_values[i][j] = document.getArray("tab_values").getArray(i).getInt(j);
+                    tab_seen[i][j] = document.getArray("tab_seen").getArray(i).getBoolean(j);
+                }
+            }
+        } else {
+            initialise_mines();
+        }
         create_demineur();
-        initialise_mines();
-        for (int i=0; i< taille; i++)
-            for (int j=0; j< taille; j++)
-                move(tab.getButton(i,j));
+        for (int i = 0; i < taille; i++)
+            for (int j = 0; j < taille; j++)
+                move(tab.getButton(i, j));
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Database database;
+        try {
+            database = new Database("games");
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+            return;
+        }
+        MutableDocument document = new MutableDocument("démineur");
+
+        document.setInt("taille", taille);
+        document.setInt("mines", mines);
+        document.setBoolean("fini", fini);
+        MutableArray array_flag = new MutableArray();
+        MutableArray array_mines = new MutableArray();
+        MutableArray array_values = new MutableArray();
+        MutableArray array_seen = new MutableArray();
+        for (int i = 0 ; i < taille; i++){
+            MutableArray arr_flag = new MutableArray();
+            MutableArray arr_mines = new MutableArray();
+            MutableArray arr_values = new MutableArray();
+            MutableArray arr_seen = new MutableArray();
+            for (int j = 0; j < taille; j++){
+                arr_flag.addBoolean(tab_flag[i][j]);
+                arr_mines.addBoolean(tab_mines[i][j]);
+                arr_values.addInt(tab_values[i][j]);
+                arr_seen.addBoolean(tab_seen[i][j]);
+            }
+            array_flag.addArray(arr_flag);
+            array_mines.addArray(arr_mines);
+            array_values.addArray(arr_values);
+            array_seen.addArray(arr_seen);
+        }
+        document.setArray("tab_flag", array_flag);
+        document.setArray("tab_mines", array_mines);
+        document.setArray("tab_values", array_values);
+        document.setArray("tab_seen", array_seen);
+        try {
+            database.save(document);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         height = findViewById(android.R.id.content).getHeight() - main.getHeight() - flag.getHeight();
