@@ -52,14 +52,12 @@
         android:id="@+id/grille"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:columnCount="4"
-        android:rowCount="4"
         android:minWidth="0dp"
         android:minHeight="0dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         ></GridLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
