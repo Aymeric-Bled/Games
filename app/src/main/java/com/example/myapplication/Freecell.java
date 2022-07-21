@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -16,17 +17,19 @@ import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 
 import java.util.ArrayList;
 
 public class Freecell extends AppCompatActivity {
-    private Button main;
-    private Button _new;
+    private ImageView main;
+    private ImageView _new;
     private Button _end;
     private FreecellColumn column;
     private FreecellEnd end;
     private FreecellDepot depot;
     private int columnCount = 8;
+    private boolean firstStart = true;
 
     private class FreecellCarte extends Carte{
 
@@ -313,6 +316,10 @@ public class Freecell extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_freecell);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -336,19 +343,36 @@ public class Freecell extends AppCompatActivity {
                 _new();
             }
         });
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int width = metrics.widthPixels;
-        int height = main.getMinHeight();
-        int x_depot[] = {5 * width / 9, 6 * width / 9, 7 * width / 9, 8 * width / 9};
-        int y_depot[] = {height, height, height, height};
-        this.depot = new FreecellDepot(x_depot,y_depot,width / 9, 3 * width / 18, this);
-        this.end = new FreecellEnd(0, height,width / 9, height,2*width / 9, height,3*width / 9, height,width / 9, 3 * width / 18, this);
-        height += width / 24;
-        int x_column[] = {0, width / 8, 2 * width / 8, 3 * width / 8, 4 * width / 8, 5 * width / 8, 6 * width / 8, 7 * width / 8};
-        int y_column[] = {height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16};
-        this.column = new FreecellColumn(x_column, y_column, width / 8, 3 * width / 16, width / 15, this);
-        _new();
+    }
+
+    public synchronized boolean isFirstStart() {
+        if (firstStart){
+            firstStart = false;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (isFirstStart()){
+            DisplayMetrics metrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            int width = metrics.widthPixels;
+            int height = main.getHeight();
+            int x_depot[] = {5 * width / 9, 6 * width / 9, 7 * width / 9, 8 * width / 9};
+            int y_depot[] = {height, height, height, height};
+            this.depot = new FreecellDepot(x_depot,y_depot,width / 9, 3 * width / 18, this);
+            this.end = new FreecellEnd(0, height,width / 9, height,2*width / 9, height,3*width / 9, height,width / 9, 3 * width / 18, this);
+            height += width / 24;
+            int x_column[] = {0, width / 8, 2 * width / 8, 3 * width / 8, 4 * width / 8, 5 * width / 8, 6 * width / 8, 7 * width / 8};
+            int y_column[] = {height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16, height + 3 * width / 16};
+            this.column = new FreecellColumn(x_column, y_column, width / 8, 3 * width / 16, width / 15, this);
+            firstStart = false;
+            _new();
+        }
+
 
     }
 }

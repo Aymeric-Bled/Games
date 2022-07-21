@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -9,12 +10,13 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 public class Pow_2 extends AppCompatActivity {
-    private Button main;
+    private ImageView main;
     private Button score;
-    private Button new_;
+    private ImageView new_;
     private GridLayout grille;
     private Table tab;
     private int tab_number[][] = new int[4][4];
@@ -233,6 +235,10 @@ public class Pow_2 extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pow_2);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         this.grille = findViewById(R.id.grille);
         this.score = findViewById(R.id.score);

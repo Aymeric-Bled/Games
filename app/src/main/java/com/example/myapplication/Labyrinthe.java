@@ -19,12 +19,14 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,7 +34,7 @@ import java.util.Set;
 
 
 public class Labyrinthe extends AppCompatActivity {
-    private Button main;
+    private ImageView main;
     private TextView selection;
     private Spinner t;
     private Button g;
@@ -677,6 +679,10 @@ public class Labyrinthe extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_labyrinthe);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override

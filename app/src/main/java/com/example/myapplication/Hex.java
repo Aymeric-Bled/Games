@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -24,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -35,8 +37,8 @@ import java.util.HashMap;
 import java.util.Set;
 
 public class Hex extends AppCompatActivity {
-    private Button main;
-    private Button new_;
+    private ImageView main;
+    private ImageView new_;
     private Spinner player;
     private String players[] = {"1 joueur", "2 joueurs", "0 joueur"};
     private int nb_players = 1;
@@ -1195,6 +1197,9 @@ public class Hex extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_hex);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1243,7 +1248,12 @@ public class Hex extends AppCompatActivity {
         super.onWindowFocusChanged(hasFocus);
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        double height = findViewById(android.R.id.content).getHeight();
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+
+        double height = findViewById(android.R.id.content).getHeight() - main.getHeight();
         double width = metrics.widthPixels;
         w = ((3 * m + 1) / 2);
         h = ((3 * m - 3) * Math.sqrt(3)) / 2;
@@ -1258,7 +1268,7 @@ public class Hex extends AppCompatActivity {
             h = (int) h;
         }
         dx = (int) (4 * width - ((3 * m + 1) * w)) / 8;
-        dy = (int) (2 * height - ((3 * m - 3) * h)) / 4;
+        dy = (int) (2 * height - ((3 * m - 3) * h)) / 4 + main.getHeight();
         Button b;
         for (int i=0; i < m; i++)
             for (int j=0; j<m; j++){

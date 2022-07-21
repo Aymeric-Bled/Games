@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.content.DialogInterface;
@@ -16,6 +17,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
@@ -25,8 +27,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class Sudoku extends AppCompatActivity {
-    private Button main;
-    private Button new_;
+    private ImageView main;
+    private ImageView new_;
     private int tab_id[]={R.id.s1,R.id.s2,R.id.s3,R.id.s4,R.id.s5,R.id.s6,R.id.s7,R.id.s8,R.id.s9,R.id.s10,R.id.s11,R.id.s12,R.id.s13,R.id.s14,R.id.s15,R.id.s16,R.id.s17,R.id.s18,R.id.s19,R.id.s20,R.id.s21,R.id.s22,R.id.s23,R.id.s24,R.id.s25,R.id.s26,R.id.s27,R.id.s28,R.id.s29,R.id.s30,R.id.s31,R.id.s32,R.id.s33,R.id.s34,R.id.s35,R.id.s36,R.id.s37,R.id.s38,R.id.s39,R.id.s40,R.id.s41,R.id.s42,R.id.s43,R.id.s44,R.id.s45,R.id.s46,R.id.s47,R.id.s48,R.id.s49,R.id.s50,R.id.s51,R.id.s52,R.id.s53,R.id.s54,R.id.s55,R.id.s56,R.id.s57,R.id.s58,R.id.s59,R.id.s60,R.id.s61,R.id.s62,R.id.s63,R.id.s64,R.id.s65,R.id.s66,R.id.s67,R.id.s68,R.id.s69,R.id.s70,R.id.s71,R.id.s72,R.id.s73,R.id.s74,R.id.s75,R.id.s76,R.id.s77,R.id.s78,R.id.s79,R.id.s80,R.id.s81};
     private int num[]={R.id.un,R.id.deux,R.id.trois,R.id.quatre,R.id.cinq,R.id.six,R.id.sept,R.id.huit,R.id.neuf,R.id.del,0};
     private int t[][]={{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0}};
@@ -885,6 +887,10 @@ public class Sudoku extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sudoku);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         float x=metrics.widthPixels/(350);
