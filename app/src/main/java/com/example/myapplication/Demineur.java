@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.animation.Animator;
@@ -20,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
@@ -33,8 +35,8 @@ import com.couchbase.lite.MutableDocument;
 import java.util.ArrayList;
 
 public class Demineur extends AppCompatActivity {
-    private Button main;
-    private Button new_;
+    private ImageView main;
+    private ImageView new_;
     private Button déminer;
     private Button flag;
     private int taille = 20;
@@ -419,6 +421,10 @@ public class Demineur extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demineur);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.déminer=findViewById(R.id.déminer);
         this.main = findViewById(R.id.main);
         this.new_= findViewById(R.id.new_);

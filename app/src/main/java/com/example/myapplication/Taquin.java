@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -27,6 +28,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
@@ -48,8 +50,8 @@ import java.util.concurrent.TimeoutException;
 
 
 public class Taquin extends AppCompatActivity {
-    private Button main;
-    private Button alea;
+    private ImageView main;
+    private ImageView alea;
     private Button solveur;
     private int taille;
     private int tab[][];
@@ -393,7 +395,7 @@ public class Taquin extends AppCompatActivity {
         Pair<Pair<Integer, Integer>, Pair<Integer, Integer>> move = result.first;
         doMove(move);
         s = new AnimatorSet();
-        ObjectAnimator animator =  ObjectAnimator.ofObject(main, "TextColor", new ArgbEvaluator(), Color.BLACK, Color.BLACK);
+        ObjectAnimator animator =  ObjectAnimator.ofFloat(main, "translationX", 0f, 0f);
         animator.setDuration(0);
         s.play(animator);
         s.addListener(new AnimatorListenerAdapter() {
@@ -448,6 +450,11 @@ public class Taquin extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_taquin);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        create_table();
+        alea();
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override

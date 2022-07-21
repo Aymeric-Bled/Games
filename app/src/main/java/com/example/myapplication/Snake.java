@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 
 import android.animation.Animator;
@@ -17,13 +18,14 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 
 public class Snake extends AppCompatActivity {
-    private Button main;
-    private Button new_;
+    private ImageView main;
+    private ImageView new_;
     private Button scoreButton;
     private Table tab;
     private int taille = 20;
@@ -307,6 +309,9 @@ public class Snake extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_snake);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -320,8 +325,6 @@ public class Snake extends AppCompatActivity {
 
         this.scoreButton = findViewById(R.id.score);
 
-        create_layout();
-
         this.new_ = findViewById(R.id.new_);
         new_.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -334,8 +337,11 @@ public class Snake extends AppCompatActivity {
             }
         });
 
+        create_layout();
+
         for (int i = 0; i < taille; i++)
             for (int j = 0; j < taille; j++)
                 move(tab.getButton(i,j));
+
     }
 }

@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -17,6 +18,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -24,11 +26,11 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 public class Puissance_4 extends AppCompatActivity {
-    private Button main;
+    private ImageView main;
     private Spinner player;
     private String players[] = {"1 joueur","2 joueurs","0 joueur"};
     private int nb_players = 1;
-    private Button new_;
+    private ImageView new_;
     private Spinner first;
     private String first_play[] = {"Le joueur commence","L'ordinateur commence"};
     private boolean player_begin = true;
@@ -677,6 +679,10 @@ public class Puissance_4 extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_puissance_4);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         create_puissance_4();
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {

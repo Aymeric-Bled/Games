@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -20,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -30,10 +32,10 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public class Echecs extends AppCompatActivity {
-    private Button main;
-    private Button new_;
+    private ImageView main;
+    private ImageView new_;
     private Spinner player;
-    private Button unDo;
+    private ImageView unDo;
     private String players[] = {"1 joueur","2 joueurs","0 joueur"};
     private int nb_players = 1;
     private GridLayout grille;
@@ -647,7 +649,7 @@ public class Echecs extends AppCompatActivity {
     void play_computer(){
         isMoving = true;
         AnimatorSet s = new AnimatorSet();
-        ObjectAnimator animator =  ObjectAnimator.ofObject(main, "TextColor", new ArgbEvaluator(), Color.BLACK, Color.BLACK);
+        ObjectAnimator animator =  ObjectAnimator.ofFloat(main, "translationX", 0f, 0f);
         animator.setDuration(200);
         s.play(animator);
         s.addListener(new AnimatorListenerAdapter() {
@@ -1291,6 +1293,10 @@ public class Echecs extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_echecs);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         initialise_piece();
         create_layout();
         this.grille = findViewById(R.id.grille);
@@ -1331,7 +1337,7 @@ public class Echecs extends AppCompatActivity {
                 move(tab_button[i][j]);
             }
         }
-        this.unDo = (Button) findViewById(R.id.undo);
+        this.unDo = findViewById(R.id.undo);
         unDo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

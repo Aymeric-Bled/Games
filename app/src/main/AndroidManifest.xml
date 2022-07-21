@@ -8,76 +8,78 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="Games"
         android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/ActivityTheme">
         <activity
             android:name=".Mastermind"
-            android:label="Mastermind"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Dames"
-            android:label="Dames"
+            android:label=""
             android:screenOrientation="portrait" />
         <activity
             android:name=".Chomp"
-            android:label="Chomp"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Freecell"
-            android:label="Freecell"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Solitaire"
-            android:label="Solitaire"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Snake"
-            android:label="Snake"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Echecs"
-            android:label="Echecs"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Pow_2"
-            android:label="2048"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Cinq"
-            android:label="5x5"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Hex"
-            android:label="Hex"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Demineur"
-            android:label="Démineur"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Labyrinthe"
-            android:label="Labyrinthe"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Sudoku"
-            android:label="Sudoku"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Puissance_4"
-            android:label="Puissance 4"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Taquin"
-            android:label="Taquin"
-            android:screenOrientation="portrait" />
+            android:label=""
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".Jeu_de_la_vie"
-            android:label="Jeu de la vie"
-            android:screenOrientation="portrait" />
-        <activity android:name=".MainActivity">
+            android:label=""
+            android:screenOrientation="portrait"/>
+        <activity android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

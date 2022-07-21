@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -12,6 +13,7 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.couchbase.lite.CouchbaseLite;
@@ -22,8 +24,8 @@ import com.couchbase.lite.MutableArray;
 import com.couchbase.lite.MutableDocument;
 
 public class Cinq extends AppCompatActivity {
-    private Button main;
-    private Button new_;
+    private ImageView main;
+    private ImageView new_;
     private Button what;
     private GridLayout grille;
     private int tab_button[][] = new int[5][5];
@@ -181,6 +183,10 @@ public class Cinq extends AppCompatActivity {
                 }
             }
         }
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        // using toolbar as ActionBar
+        setSupportActionBar(toolbar);
         create_cinq();
         //Toast.makeText(this, "create", Toast.LENGTH_SHORT).show();
 
