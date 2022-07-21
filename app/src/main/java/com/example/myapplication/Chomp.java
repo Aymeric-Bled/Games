@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -19,16 +20,17 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 
 import java.util.ArrayList;
 
 public class Chomp extends AppCompatActivity {
-    private Button main;
+    private ImageView main;
     private Spinner players;
     private String nb_players[] = {"1 joueur","2 joueurs","0 joueur"};
-    private Button new_;
+    private ImageView new_;
     private int width = 9;
     private int height = 10;
     private Table tab;
@@ -262,6 +264,10 @@ public class Chomp extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chomp);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override

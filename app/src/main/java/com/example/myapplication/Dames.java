@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -20,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -27,10 +29,10 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 public class Dames extends AppCompatActivity {
-    private Button new_;
+    private ImageView new_;
     private Spinner player;
     private String players[] = {"1 joueur","2 joueurs","0 joueur"};
-    private Button main;
+    private ImageView main;
     private GridLayout grille_board;
     private GridLayout grille_piece;
     private int taille = 10;
@@ -1018,6 +1020,10 @@ public class Dames extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dames);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         this.grille_board = findViewById(R.id.grille_board);
         this.grille_piece = findViewById(R.id.grille_piece);

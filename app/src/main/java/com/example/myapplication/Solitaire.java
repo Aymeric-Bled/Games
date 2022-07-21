@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -16,18 +17,20 @@ import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
 public class Solitaire extends AppCompatActivity {
-    private Button main;
-    private Button _new;
+    private ImageView main;
+    private ImageView _new;
     private Button _end;
     private SolitaireDraw draw;
     private SolitaireEnd end;
     private SolitaireColumn column;
     private int columnCount = 7;
+    private boolean firstStart = true;
 
 
     private class SolitaireCarte extends Carte{
@@ -327,6 +330,10 @@ public class Solitaire extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_solitaire);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         main.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -354,16 +361,32 @@ public class Solitaire extends AppCompatActivity {
                 _new();
             }
         });
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int width = metrics.widthPixels;
-        int height = main.getMinHeight();
-        this.draw = new SolitaireDraw(6*width / 7,height,5 * width / 7,height,width / 7, 3 * width / 14, this);
-        this.end = new SolitaireEnd(0, height,width / 7, height,2*width / 7, height,3*width / 7, height,width / 7, 3 * width / 14, this);
-        height += width / 21;
-        int x[] = {0, width / 7, 2 * width / 7, 3 * width / 7, 4 * width / 7, 5 * width / 7, 6 * width / 7};
-        int y[] = {height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14};
-        this.column = new SolitaireColumn(x, y, width / 7, 3 * width / 14, width / 21, this);
-        _new();
+    }
+
+    public synchronized boolean isFirstStart() {
+        if (firstStart){
+            firstStart = false;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (isFirstStart()) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            int width = metrics.widthPixels;
+            int height = main.getHeight();
+            this.draw = new SolitaireDraw(6*width / 7,height,5 * width / 7,height,width / 7, 3 * width / 14, this);
+            this.end = new SolitaireEnd(0, height,width / 7, height,2*width / 7, height,3*width / 7, height,width / 7, 3 * width / 14, this);
+            height += width / 21;
+            int x[] = {0, width / 7, 2 * width / 7, 3 * width / 7, 4 * width / 7, 5 * width / 7, 6 * width / 7};
+            int y[] = {height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14, height + 3 * width / 14};
+            this.column = new SolitaireColumn(x, y, width / 7, 3 * width / 14, width / 21, this);
+            _new();
+
+        }
     }
 }

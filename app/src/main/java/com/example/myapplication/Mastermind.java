@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.content.DialogInterface;
@@ -16,12 +17,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 public class Mastermind extends AppCompatActivity {
-    private Button main;
-    private Button new_;
+    private ImageView main;
+    private ImageView new_;
     private Table tab;
     private int width = 6;
     private int height = 11;
@@ -233,6 +235,10 @@ public class Mastermind extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mastermind);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         this.main = findViewById(R.id.main);
         this.new_ = findViewById(R.id.new_);
         main.setOnClickListener(new View.OnClickListener() {

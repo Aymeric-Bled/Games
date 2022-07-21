@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 
@@ -19,6 +20,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.ToggleButton;
@@ -27,18 +29,19 @@ import java.util.ArrayList;
 
 
 public class Jeu_de_la_vie extends AppCompatActivity {
-    private Button main;
-    private ToggleButton lecture;
-    private Button del;
-    private Button alea;
+    private ImageView main;
+    private ImageView lecture;
+    private ImageView del;
+    private ImageView alea;
     private Table tab;
     private int taille = 50;
     private int color[][]= new int[taille][taille];
     private int copy[][]=new int[taille][taille];
     private int height;
+    private boolean play = false;
 
 
-    //private AnimatorSet s = new AnimatorSet();
+    private AnimatorSet s = new AnimatorSet();
 
 
     void create_layout(){
@@ -71,7 +74,7 @@ public class Jeu_de_la_vie extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!lecture.isChecked()) {
+                if (!play) {
                     if (((ColorDrawable) button.getBackground()).getColor() == Color.BLACK) {
                         button.setBackgroundColor(Color.WHITE);
                         int n= num_button(button);
@@ -110,7 +113,7 @@ public class Jeu_de_la_vie extends AppCompatActivity {
     }
 
     void jeu_de_la_vie() {
-        AnimatorSet s = new AnimatorSet();
+        s = new AnimatorSet();
         Button b;
         final ArrayList<ObjectAnimator> anim = new ArrayList<>();
         int voisin = 0;
@@ -161,14 +164,15 @@ public class Jeu_de_la_vie extends AppCompatActivity {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
-                    if (lecture.isChecked()){
+                    if (play){
                         jeu_de_la_vie();
                     }
                 }
             });
         }
         else{
-            lecture.setChecked(false);
+            lecture.setImageResource(R.drawable.ic_baseline_play_arrow_24);
+            play = false;
         }
         s.start();
     }
@@ -193,10 +197,23 @@ public class Jeu_de_la_vie extends AppCompatActivity {
             }
     }
 
+    public synchronized boolean canPlay(){
+        if (play){
+            return false;
+        }
+        play = true;
+        lecture.setImageResource(R.drawable.ic_baseline_pause_24);
+        return true;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_jeu_de_la_vie);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         create_layout();
         this.main = findViewById(R.id.main);
         this.lecture= findViewById(R.id.lecture);
@@ -217,7 +234,7 @@ public class Jeu_de_la_vie extends AppCompatActivity {
         del.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!lecture.isChecked()) {
+                if (!play) {
                     for (int i=0; i<taille; i++)
                         for (int j=0; j<taille; j++)
                             del_color(tab.getButton(i,j));
@@ -225,11 +242,16 @@ public class Jeu_de_la_vie extends AppCompatActivity {
             }
         });
 
-        lecture.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        lecture.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked){
+            public void onClick(View view) {
+                if (canPlay()){
                     jeu_de_la_vie();
+                }
+                else{
+                    s.pause();
+                    lecture.setImageResource(R.drawable.ic_baseline_play_arrow_24);
+                    play = false;
                 }
             }
         });
@@ -238,7 +260,7 @@ public class Jeu_de_la_vie extends AppCompatActivity {
         alea.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!lecture.isChecked())
+                if (!play)
                     alea();
             }
         });
@@ -248,7 +270,7 @@ public class Jeu_de_la_vie extends AppCompatActivity {
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-        height = findViewById(android.R.id.content).getHeight() - main.getHeight() - alea.getHeight();
+        height = findViewById(android.R.id.content).getHeight() - main.getHeight();
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
         ScrollView scrollView = findViewById(R.id.scroll);
