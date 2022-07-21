@@ -6,6 +6,7 @@ import androidx.appcompat.widget.Toolbar;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -15,6 +16,13 @@ import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.couchbase.lite.CouchbaseLite;
+import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.Database;
+import com.couchbase.lite.Document;
+import com.couchbase.lite.MutableArray;
+import com.couchbase.lite.MutableDocument;
+
 public class Cinq extends AppCompatActivity {
     private ImageView main;
     private ImageView new_;
@@ -22,7 +30,6 @@ public class Cinq extends AppCompatActivity {
     private GridLayout grille;
     private int tab_button[][] = new int[5][5];
     private int tab_color[][] = new int[5][5];
-    String gameState;
 
 
     int place (int b){
@@ -108,9 +115,6 @@ public class Cinq extends AppCompatActivity {
     void create_cinq(){
         Button b;
         int id;
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int w = (metrics.widthPixels - 6)/ 5;
         grille= findViewById(R.id.grille);
         grille.removeAllViews();
         grille.setColumnCount(5);
@@ -121,12 +125,12 @@ public class Cinq extends AppCompatActivity {
                 id = Button.generateViewId();
                 b.setId(id);
                 tab_button[i][j] = id;
-                tab_color[i][j] = 0;
                 b.setMinimumHeight(0);
                 b.setMinimumWidth(0);
-                b.setBackgroundColor(Color.WHITE);
-                b.setHeight(w);
-                b.setWidth(w);
+                if (tab_color[i][j] == 0)
+                    b.setBackgroundColor(Color.WHITE);
+                else
+                    b.setBackgroundColor(Color.BLACK);
                 GridLayout.LayoutParams params = new GridLayout.LayoutParams();
                 params.setMargins(1,1,1,1);
                 b.setLayoutParams(params);
@@ -151,6 +155,34 @@ public class Cinq extends AppCompatActivity {
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cinq);
+        CouchbaseLite.init(this);
+        Database database;
+        Document document = null;
+        boolean hasSave = false;
+        try {
+            database = new Database("games");
+            document = database.getDocument("5x5");
+            if (document != null){
+                document.getArray("tab_color");
+                hasSave = true;
+            }
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+        if (hasSave) {
+            for (int i = 0; i < 5; i++) {
+                for (int j = 0; j < 5; j++) {
+                    tab_color[i][j] = document.getArray("tab_color").getArray(i).getInt(j);
+                }
+            }
+        }
+        else{
+            for (int i=0; i < 5; i++) {
+                for (int j = 0; j < 5; j++) {
+                    tab_color[i][j] = 0;
+                }
+            }
+        }
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 
         // using toolbar as ActionBar
@@ -161,74 +193,76 @@ public class Cinq extends AppCompatActivity {
         this.main = findViewById(R.id.main);
         this.new_ = findViewById(R.id.new_);
         this.what = findViewById(R.id.what);
+        main.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent main = new Intent(getApplicationContext(),MainActivity.class);
+                startActivity(main);
+                finish();
+            }
+        });
+        new_.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new_();
+            }
+        });
+        what.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                what();
+            }
+        });
+        for (int i = 0; i < 5; i++)
+            for (int j = 0; j < 5; j++)
+                move(tab_button[i][j]);
 
 
 
-        if (savedInstanceState != null) {
-            //gameState = savedInstanceState.getString("cinq");
-            //main.setText(gameState);
-        }
-        else{
-            main.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent main = new Intent(getApplicationContext(),MainActivity.class);
-                    startActivity(main);
-                    finish();
-                }
-            });
-            new_.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    new_();
-                }
-            });
-
-            what.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    what();
-                }
-            });
-            for (int i = 0; i < 5; i++)
-                for (int j = 0; j < 5; j++)
-                    move(tab_button[i][j]);
-        }
-
-
-
-    }
-    @Override
-    public void onRestoreInstanceState ( Bundle savedInstanceState ) {
-        super.onRestoreInstanceState(savedInstanceState);
-        gameState = savedInstanceState.getString("cinq");
-        //Toast.makeText(this, "restore", Toast.LENGTH_SHORT).show();
-
-    }
-
-    @Override
-    public void onSaveInstanceState ( Bundle outState ) {
-        super.onSaveInstanceState(outState);
-        gameState = "saveText";
-        outState.putString("cinq", gameState);
-        //Toast.makeText(this, outState.getString("cinq"), Toast.LENGTH_SHORT).show();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        //Toast.makeText(this, "destroy", Toast.LENGTH_SHORT).show();
+        Database database;
+        try {
+            database = new Database("games");
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+            return;
+        }
+        MutableDocument document = new MutableDocument("5x5");
+        MutableArray array = new MutableArray();
+        for (int i = 0 ; i < 5; i++){
+            MutableArray arr = new MutableArray();
+            for (int j = 0; j < 5; j++){
+                arr.addInt(tab_color[i][j]);
+            }
+            array.addArray(arr);
+        }
+        document.setArray("tab_color", array);
+        try {
+            database.save(document);
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
     }
 
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        //Toast.makeText(this, "restart", Toast.LENGTH_SHORT).show();
-    }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        //Toast.makeText(this, "start", Toast.LENGTH_SHORT).show();
+    public void onWindowFocusChanged(boolean hasFocus) {
+        int height = findViewById(android.R.id.content).getHeight();
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int width = metrics.widthPixels;
+        int w = (Math.min(height, width) - 6) / 5;
+        for (int i =0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                Button b = findViewById(tab_button[i][j]);
+                b.setWidth(w);
+                b.setHeight(w);
+            }
+        }
+
     }
 }

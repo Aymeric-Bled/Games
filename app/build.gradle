@@ -28,4 +28,5 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'org.jetbrains:annotations-java5:15.0'
+    implementation group: 'com.couchbase.lite', name: 'couchbase-lite-android', version: '3.0.0'
 }
