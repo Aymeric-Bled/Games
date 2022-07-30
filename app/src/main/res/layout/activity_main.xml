@@ -8,12 +8,12 @@
 
     <ImageButton
         android:id="@+id/image"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:clickable="false"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:background="@drawable/nebula"
+        android:background="@color/colorPrimaryDark"
         />
 
 
@@ -24,187 +24,223 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
+        <GridLayout
+            android:id="@+id/grille"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:orientation="horizontal"
+            android:columnCount="3"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
-            <Button
-                android:id="@+id/alea"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:layout_marginBottom="1dp"
-                android:text="Jeu aléatoire"
-                android:background="@drawable/mainbutton"
-                android:alpha="0.9"
-                android:textColor="@color/white" />
+
             <Button
                 android:id="@+id/pow_2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="2048"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_brown_white"
+                android:padding="3dp"
+                android:text="2048"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/cinq"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="5x5"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_black_white"
+                android:padding="3dp"
+                android:text="5x5"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
 
             <Button
                 android:id="@+id/chomp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Chomp"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_brown_white"
+                android:padding="3dp"
+                android:text="Chomp"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
 
             <Button
                 android:id="@+id/dames"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Dames"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_brown_black"
+                android:padding="3dp"
+                android:text="Dames"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
 
             <Button
                 android:id="@+id/demineur"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Démineur"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_primary_white"
+                android:padding="3dp"
+                android:text="Démineur"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/echecs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Echecs"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_brown_black"
+                android:padding="3dp"
+                android:text="Echecs"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/freecell"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Freecell"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_primary_white"
+                android:padding="3dp"
+                android:text="Freecell"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/hex"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Hex"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_red_blue"
+                android:padding="3dp"
+                android:text="Hex"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
 
             <Button
                 android:id="@+id/jeu_de_la_vie"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Jeu de la vie"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_black_white"
+                android:padding="3dp"
+                android:text="Jeu de la vie"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp"/>
+
             <Button
                 android:id="@+id/labyrinthe"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Labyrinthe"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_red_white"
+                android:padding="3dp"
+                android:text="Labyrinthe"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/mastermind"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Mastermind"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_black_white"
+                android:padding="3dp"
+                android:text="Mastermind"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/puissance_4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Puissance 4"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_red_yellow"
+                android:padding="3dp"
+                android:text="Puissance 4"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/snake"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Snake"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_black_white"
+                android:padding="3dp"
+                android:text="Snake"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/solitaire"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Solitaire"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_primary_white"
+                android:padding="3dp"
+                android:text="Solitaire"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/sudoku"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Sudoku"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
+                android:background="@drawable/main_blue_white"
+                android:padding="3dp"
+                android:text="Sudoku"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+
             <Button
                 android:id="@+id/jeu_du_taquin"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_width="150dp"
+                android:layout_height="200dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginBottom="1dp"
-                android:text="Taquin"
-                android:background="@drawable/mainbutton"
                 android:alpha="0.9"
-                android:textColor="@color/white"  />
-        </LinearLayout>
+                android:background="@drawable/main_brown_white"
+                android:padding="3dp"
+                android:text="Taquin"
+                android:textColor="@color/colorPrimary"
+                android:textSize="20sp" />
+        </GridLayout>
     </ScrollView>
 
 

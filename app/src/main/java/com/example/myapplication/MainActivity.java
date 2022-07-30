@@ -2,12 +2,18 @@ package com.example.myapplication;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.PersistableBundle;
+import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.GridLayout;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private Button alea;
@@ -28,97 +34,12 @@ public class MainActivity extends AppCompatActivity {
     private Button dames;
     private Button mastermind;
 
+    private ArrayList<Button> buttons = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        this.alea=findViewById(R.id.alea);
-        alea.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int i=(int)(Math.random()*15);
-                if (i == 0) {
-                    Intent pow = new Intent(getApplicationContext(), Pow_2.class);
-                    startActivity(pow);
-                    finish();
-                }
-                if (i == 1) {
-                    Intent cinq = new Intent(getApplicationContext(), Cinq.class);
-                    startActivity(cinq);
-                    finish();
-                }
-                if (i == 2) {
-                    Intent dem = new Intent(getApplicationContext(), Demineur.class);
-                    startActivity(dem);
-                    finish();
-                }
-                if (i == 3) {
-                    Intent ech = new Intent(getApplicationContext(), Echecs.class);
-                    startActivity(ech);
-                    finish();
-                }
-                if (i == 4) {
-                    Intent hex = new Intent(getApplicationContext(), Hex.class);
-                    startActivity(hex);
-                    finish();
-                }
-                if (i == 5) {
-                    Intent jdv = new Intent(getApplicationContext(), Jeu_de_la_vie.class);
-                    startActivity(jdv);
-                    finish();
-                }
-                if (i == 6) {
-                    Intent jdt = new Intent(getApplicationContext(), Taquin.class);
-                    startActivity(jdt);
-                    finish();
-                }
-                if (i == 7) {
-                    Intent p4 = new Intent(getApplicationContext(), Puissance_4.class);
-                    startActivity(p4);
-                    finish();
-                }
-                if (i == 8) {
-                    Intent sdk = new Intent(getApplicationContext(), Sudoku.class);
-                    startActivity(sdk);
-                    finish();
-                }
-                if (i == 9) {
-                    Intent lab = new Intent(getApplicationContext(), Labyrinthe.class);
-                    startActivity(lab);
-                    finish();
-                }
-                if (i == 10){
-                    Intent snk= new Intent(getApplicationContext(),Snake.class);
-                    startActivity(snk);
-                    finish();
-                }
-                if (i == 11){
-                    Intent chm= new Intent(getApplicationContext(),Chomp.class);
-                    startActivity(chm);
-                    finish();
-                }
-                if (i == 12){
-                    Intent sol= new Intent(getApplicationContext(),Solitaire.class);
-                    startActivity(sol);
-                    finish();
-                }
-                if (i == 13){
-                    Intent fre= new Intent(getApplicationContext(),Freecell.class);
-                    startActivity(fre);
-                    finish();
-                }
-                if (i == 14){
-                    Intent dam= new Intent(getApplicationContext(),Dames.class);
-                    startActivity(dam);
-                    finish();
-                }
-                if (i == 15){
-                    Intent mas= new Intent(getApplicationContext(),Mastermind.class);
-                    startActivity(mas);
-                    finish();
-                }
-            }
-        });
 
         this.pow_2 = findViewById(R.id.pow_2);
         pow_2.setOnClickListener(new View.OnClickListener() {
@@ -129,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(pow_2);
 
         this.cinq = findViewById(R.id.cinq);
         cinq.setOnClickListener(new View.OnClickListener() {
@@ -139,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(cinq);
 
         this.chomp = findViewById(R.id.chomp);
         chomp.setOnClickListener(new View.OnClickListener() {
@@ -149,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(chomp);
 
         this.demineur = findViewById(R.id.demineur);
         demineur.setOnClickListener(new View.OnClickListener() {
@@ -159,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(demineur);
 
         this.echecs = findViewById(R.id.echecs);
         echecs.setOnClickListener(new View.OnClickListener() {
@@ -169,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(echecs);
 
 
         this.hex = findViewById(R.id.hex);
@@ -180,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(hex);
 
         this.jeudelavie = findViewById(R.id.jeu_de_la_vie);
         jeudelavie.setOnClickListener(new View.OnClickListener() {
@@ -190,6 +117,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(jeudelavie);
+
         this.jeudutaquin = findViewById(R.id.jeu_du_taquin);
         jeudutaquin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -199,6 +128,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(jeudutaquin);
+
         this.puissance4 = findViewById(R.id.puissance_4);
         puissance4.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -208,6 +139,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(puissance4);
+
         this.sudoku = findViewById(R.id.sudoku);
         sudoku.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -217,6 +150,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(sudoku);
+
         this.labyrinthe = findViewById(R.id.labyrinthe);
         labyrinthe.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -226,6 +161,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(labyrinthe);
+
         this.snake = findViewById(R.id.snake);
         snake.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -235,6 +172,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(snake);
+
         this.solitaire = findViewById(R.id.solitaire);
         solitaire.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -244,6 +183,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(solitaire);
+
         this.freecell = findViewById(R.id.freecell);
         freecell.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -253,6 +194,8 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(freecell);
+
         this.dames = findViewById(R.id.dames);
         dames.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -262,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(dames);
 
         this.mastermind = findViewById(R.id.mastermind);
         mastermind.setOnClickListener(new View.OnClickListener() {
@@ -272,5 +216,19 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+        buttons.add(mastermind);
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        int width = metrics.widthPixels / 3;
+        int height = metrics.heightPixels / 3;
+
+        for (Button b: buttons){
+            ViewGroup.LayoutParams params = b.getLayoutParams();
+            params.height = height;
+            params.width = width;
+            b.setMinimumWidth(0);
+            b.setMinimumHeight(0);
+        }
     }
 }

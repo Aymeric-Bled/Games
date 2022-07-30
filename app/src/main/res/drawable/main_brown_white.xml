@@ -6,4 +6,10 @@
         android:endColor="@color/brown"
         android:centerColor="@color/white"
         android:angle="45"/>
+    <corners android:bottomRightRadius="20dip"
+        android:bottomLeftRadius="20dip"
+        android:topRightRadius="20dip"
+        android:topLeftRadius="20dip"/>
+        android:topLeftRadius="50dip"/>
+    <stroke android:width="3dp" android:color="@color/colorPrimary" />
 </shape>
