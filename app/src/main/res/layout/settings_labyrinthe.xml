@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:padding="3dp"
+        android:background="@color/colorPrimaryDark">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Paramètres"
+            android:textSize="24sp"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:height="50dp"
+            android:background="@color/colorPrimaryDark"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Type de grille"
+            android:textSize="20sp"
+            android:textColor="@color/black"
+            android:background="@color/white"
+            android:padding="5dp"/>
+        <RadioGroup
+            android:id="@+id/typegrille"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white">
+
+            <RadioButton
+                android:id="@+id/labyrinthe"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Labyrinthe" />
+
+            <RadioButton
+                android:id="@+id/aleatoire"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Aléatoire" />
+        </RadioGroup>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Taille de la grille"
+            android:textSize="20sp"
+            android:textColor="@color/black"
+            android:padding="5dp"
+            android:background="@color/white">
+        </TextView>
+
+        <NumberPicker
+            android:id="@+id/taillegrille"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:orientation="vertical"
+            android:background="@color/white"></NumberPicker>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Algorithme de résolution"
+            android:textSize="20sp"
+            android:textColor="@color/black"
+            android:background="@color/white"
+            android:padding="5dp"/>
+        <RadioGroup
+            android:id="@+id/algo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white">
+
+            <RadioButton
+                android:id="@+id/profondeur"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Profondeur" />
+
+            <RadioButton
+                android:id="@+id/largeur"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Largeur" />
+
+            <RadioButton
+                android:id="@+id/a_etoile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="A*" />
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enregistrer"
+            android:background="@color/colorPrimary"
+            android:textColor="@color/white">
+        </Button>
+
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

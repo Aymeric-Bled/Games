@@ -13,6 +13,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Pair;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -21,35 +22,40 @@ import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.NumberPicker;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
 public class Labyrinthe extends AppCompatActivity {
     private ImageView main;
-    private TextView selection;
-    private Spinner t;
-    private Button g;
-    private Button profondeur;
-    private Button largeur;
-    private Button a_etoile;
-    private Spinner grilleSelection;
+    private ImageView play;
+    private ImageView new_;
+    private ImageView settings;
     private int value[][];
     private int copy[][];
     private int taille = 21;
-    private Object Taille[] = {21, 31, 41, 51, 61, 71, 81, 91, 101};
+    private List<Integer> tailleList = Arrays.asList(21, 31, 41, 51, 61, 71, 81, 91, 101);
+    private List<String> tailleStrList = Arrays.asList("21", "31", "41", "51", "61", "71", "81", "91", "101");
 
     private enum Grille {Labyrinthe, Labyrinthe_boucle, Aléatoire, Aléatoire_sortie}
 
-    private Grille currentGrille = Grille.Labyrinthe;
+    private enum Algo {Profondeur, Largeur, A_etoile}
+
+    private Grille typeGrille = Grille.Labyrinthe;
+    private Algo algo = Algo.Profondeur;
     private Table tab;
     AnimatorSet s = null;
 
@@ -663,7 +669,7 @@ public class Labyrinthe extends AppCompatActivity {
     }
 
     void nouvelle_grille() {
-        switch (currentGrille) {
+        switch (typeGrille) {
             case Labyrinthe:
                 labyrinthe();
                 break;
@@ -673,6 +679,84 @@ public class Labyrinthe extends AppCompatActivity {
             default:
                 break;
         }
+    }
+
+    void settings(){
+        LayoutInflater inflater = getLayoutInflater();
+        View alertLayout = inflater.inflate(R.layout.settings_labyrinthe, null);
+
+
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setView(alertLayout);
+        final AlertDialog dialog = alert.create();
+        dialog.show();
+
+        final RadioGroup radioGroupTypeGrille = alertLayout.findViewById(R.id.typegrille);
+        if (typeGrille == Grille.Labyrinthe) {
+            radioGroupTypeGrille.check(R.id.labyrinthe);
+        }
+        else if (typeGrille == Grille.Aléatoire){
+            radioGroupTypeGrille.check(R.id.aleatoire);
+        }
+        final NumberPicker np = alertLayout.findViewById(R.id.taillegrille);
+        np.setDisplayedValues((String[]) tailleStrList.toArray());
+        np.setMinValue(0);
+        np.setMaxValue(tailleStrList.size() - 1);
+        np.setWrapSelectorWheel(true);
+        np.setValue(tailleList.indexOf(taille));
+        final RadioGroup radioGroupAlgo = alertLayout.findViewById(R.id.algo);
+        switch (algo){
+            case Profondeur:
+                radioGroupAlgo.check(R.id.profondeur);
+                break;
+            case Largeur:
+                radioGroupAlgo.check(R.id.largeur);
+                break;
+            case A_etoile:
+                radioGroupAlgo.check(R.id.a_etoile);
+                break;
+        }
+        alertLayout.findViewById(R.id.save).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean new_layout = false;
+                if (taille != tailleList.get(np.getValue())){
+                    taille = tailleList.get(np.getValue());
+                    create_layout();
+                    System.out.println(taille);
+                    new_layout = true;
+                }
+                switch (radioGroupTypeGrille.getCheckedRadioButtonId()){
+                    case R.id.labyrinthe:
+                        if (typeGrille != Grille.Labyrinthe) {
+                            typeGrille = Grille.Labyrinthe;
+                            new_layout = true;
+                        }
+                        break;
+                    case R.id.aleatoire:
+                        if (typeGrille != Grille.Aléatoire) {
+                            typeGrille = Grille.Aléatoire;
+                            new_layout = true;
+                        }
+                        break;
+                }
+                if (new_layout){
+                    nouvelle_grille();
+                }
+                switch (radioGroupAlgo.getCheckedRadioButtonId()){
+                    case R.id.profondeur:
+                        algo = Algo.Profondeur;
+                        break;
+                    case R.id.largeur:
+                        algo = Algo.Largeur;
+                        break;
+                    case R.id.a_etoile:
+                        algo = Algo.A_etoile;
+                        break;
+                }
+                dialog.dismiss();
+            }
+        });
     }
 
     @Override
@@ -692,70 +776,40 @@ public class Labyrinthe extends AppCompatActivity {
                 finish();
             }
         });
-        this.t = findViewById(R.id.taille);
-        ArrayAdapter tailles = new ArrayAdapter(this, android.R.layout.simple_spinner_item, Taille);
-        t.setAdapter(tailles);
-        t.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                taille = (int) Taille[position];
-                create_layout();
-                nouvelle_grille();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-        this.g = findViewById(R.id.g);
-        g.setOnClickListener(new View.OnClickListener() {
+        this.new_ = findViewById(R.id.new_);
+        new_.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 nouvelle_grille();
             }
         });
 
-        this.grilleSelection = findViewById(R.id.grilleSelection);
-        final ArrayAdapter grilles = new ArrayAdapter(this, android.R.layout.simple_spinner_item, Grille.values());
-        grilleSelection.setAdapter(grilles);
-
-        grilleSelection.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        this.settings = findViewById(R.id.settings);
+        settings.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
-                currentGrille = (Grille) grilles.getItem(position);
-                nouvelle_grille();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
+            public void onClick(View v) {
+                settings();
             }
         });
 
-
-        this.profondeur = findViewById(R.id.profondeur);
-        profondeur.setOnClickListener(new View.OnClickListener() {
+        this.play = findViewById(R.id.play);
+        play.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                profondeur();
-            }
-        });
-        this.largeur = findViewById(R.id.largeur);
-        largeur.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                largeur();
-            }
-        });
-        this.a_etoile = findViewById((R.id.a_etoile));
-        a_etoile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                a_etoile();
+            public void onClick(View view) {
+                switch (algo){
+                    case Profondeur:
+                        profondeur();
+                        break;
+                    case Largeur:
+                        largeur();
+                        break;
+                    case A_etoile:
+                        a_etoile();
+                        break;
+                }
             }
         });
         create_layout();
+        nouvelle_grille();
     }
 }
