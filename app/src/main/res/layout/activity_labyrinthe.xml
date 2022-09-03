@@ -46,19 +46,35 @@
                 app:layout_constraintTop_toTopOf="@id/toolbar"
                 app:layout_constraintBottom_toBottomOf="@id/toolbar"
                 app:layout_constraintStart_toEndOf="@id/main"
-                app:layout_constraintEnd_toStartOf="@id/new_">
+                app:layout_constraintEnd_toStartOf="@id/play">
 
             </TextView>
 
 
+            <ImageView
+                android:id="@+id/play"
+                android:layout_width="?attr/actionBarSize"
+                android:layout_height="?attr/actionBarSize"
+                android:padding="8dp"
+                app:layout_constraintTop_toTopOf="@id/toolbar"
+                app:layout_constraintEnd_toStartOf="@id/new_"
+                app:srcCompat="@drawable/ic_baseline_play_arrow_24" />
             <ImageView
                 android:id="@+id/new_"
                 android:layout_width="?attr/actionBarSize"
                 android:layout_height="?attr/actionBarSize"
                 android:padding="8dp"
                 app:layout_constraintTop_toTopOf="@id/toolbar"
-                app:layout_constraintEnd_toEndOf="@id/toolbar"
+                app:layout_constraintEnd_toStartOf="@id/settings"
                 app:srcCompat="@drawable/ic_baseline_replay_24" />
+            <ImageView
+                android:id="@+id/settings"
+                android:layout_width="?attr/actionBarSize"
+                android:layout_height="?attr/actionBarSize"
+                android:padding="8dp"
+                app:layout_constraintTop_toTopOf="@id/toolbar"
+                app:layout_constraintEnd_toEndOf="@id/toolbar"
+                app:srcCompat="@drawable/ic_baseline_settings_24" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
 
@@ -74,62 +90,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
-    <Button
-        android:id="@+id/g"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nouvelle grille"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
-
-
-            <Spinner
-                android:id="@+id/taille"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:spinnerMode="dialog"
-                android:layout_gravity="center"
-                android:background="@android:drawable/btn_dropdown"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/g"
-            />
-
-
-
-    <Button
-        android:id="@+id/profondeur"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Profondeur"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <Button
-        android:id="@+id/a_etoile"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="A*"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-
-    <Button
-        android:id="@+id/largeur"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Largeur"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-    <Spinner
-        android:id="@+id/grilleSelection"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@android:drawable/btn_dropdown"
-        android:spinnerMode="dialog"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/taille" />
 
 
 
@@ -142,9 +103,9 @@
         android:minWidth="0dp"
         android:minHeight="0dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/grilleSelection"
+        app:layout_constraintTop_toBottomOf="@id/appbar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/largeur"
+        app:layout_constraintBottom_toBottomOf="parent"
         ></GridLayout>
 
 
